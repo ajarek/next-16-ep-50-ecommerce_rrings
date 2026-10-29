@@ -16,7 +16,7 @@ export function DisplayInnovationSection() {
     <section id="technologia" className="relative py-16 lg:py-24">
       {/* Background radial glow */}
       <div
-        className="pointer-events-none absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-500/5 blur-[160px]"
+        className="pointer-events-none absolute top-1/2 left-1/2 h-150 w-150 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-500/5 blur-[160px]"
         aria-hidden="true"
       />
 
@@ -56,7 +56,7 @@ export function DisplayInnovationSection() {
             </h3>
 
             {/* Product Image */}
-            <div className="relative my-6 aspect-[16/10] w-full overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-950">
+            <div className="relative my-6 aspect-16/10 w-full overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-950">
               <Image
                 src="/images/ring-image-4.png"
                 alt="Inteligentny pierścień z wyświetlaczem OLED pokazującym liczbę kroków"
@@ -64,7 +64,7 @@ export function DisplayInnovationSection() {
                 sizes="(max-width: 1024px) 100vw, 55vw"
                 className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-zinc-950/90 via-transparent to-transparent" />
             </div>
 
             {/* Bottom Metrics Bar */}
@@ -100,7 +100,7 @@ export function DisplayInnovationSection() {
           <div className="flex flex-col gap-6 lg:col-span-5">
             {/* Bento Card 2: Bio-Sensory Architecture (Top Right) */}
             <div className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-zinc-800 bg-[#0d0e14] p-6 transition-all hover:border-amber-500/40">
-              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-950">
+              <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-950">
                 <Image
                   src="/images/ring-image-3.png"
                   alt="Architektura Bio-Sensoryczna pierścienia Aura Ring na kamieniu bazaltowym"

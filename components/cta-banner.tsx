@@ -8,7 +8,7 @@ export function CtaBanner() {
   return (
     <section className="relative py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-r from-zinc-950 via-[#111218] to-zinc-950 p-8 sm:p-12 shadow-[0_0_50px_rgba(229,184,105,0.08)]">
+        <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-linear-to-r from-zinc-950 via-[#111218] to-zinc-950 p-8 sm:p-12 shadow-[0_0_50px_rgba(229,184,105,0.08)]">
           {/* Ambient light glow */}
           <div
             className="pointer-events-none absolute -right-20 -bottom-20 h-64 w-64 rounded-full bg-amber-500/15 blur-3xl"

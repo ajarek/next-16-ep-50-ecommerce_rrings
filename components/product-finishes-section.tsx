@@ -77,7 +77,7 @@ export function ProductFinishesSection() {
                           product.badge === "Bestseller"
                             ? "bg-amber-400/20 text-amber-300 border border-amber-400/30"
                             : product.badge === "Edycja Limitowana"
-                            ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-200 border border-amber-500/30"
+                            ? "bg-linear-to-r from-amber-500/20 to-orange-500/20 text-amber-200 border border-amber-500/30"
                             : "bg-zinc-800 text-zinc-300 border border-zinc-700"
                         }`}
                       >
@@ -95,7 +95,7 @@ export function ProductFinishesSection() {
                       sizes="(max-width: 768px) 100vw, 33vw"
                       className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-zinc-950/80 via-transparent to-transparent" />
                   </div>
 
                   {/* Title and Description */}

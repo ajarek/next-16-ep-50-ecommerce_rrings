@@ -25,6 +25,21 @@ export function HeroVideoSection() {
   const [activeFinish, setActiveFinish] = useState<"black" | "gold" | "silver">("black");
   const [heartRate, setHeartRate] = useState(68);
 
+  const finishDetails = {
+    black: {
+      name: "Aura Ring Matte Black",
+      price: "1 299 zł",
+    },
+    gold: {
+      name: "Aura Ring Champagne Gold",
+      price: "1 499 zł",
+    },
+    silver: {
+      name: "Aura Ring Silver Titanium",
+      price: "1 299 zł",
+    },
+  };
+
   // Subtle realistic live heart rate pulse fluctuation (e.g. 67-71 BPM)
   useEffect(() => {
     const interval = setInterval(() => {
@@ -58,11 +73,11 @@ export function HeroVideoSection() {
     <section className="relative overflow-hidden pt-8 pb-16 lg:pt-14 lg:pb-24">
       {/* Ambient background glow highlights */}
       <div
-        className="pointer-events-none absolute -top-40 left-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-amber-500/10 blur-[130px]"
+        className="pointer-events-none absolute -top-40 left-1/4 h-125 w-125 -translate-x-1/2 rounded-full bg-amber-500/10 blur-[130px]"
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute top-1/3 -right-20 h-[450px] w-[450px] rounded-full bg-cyan-500/10 blur-[140px]"
+        className="pointer-events-none absolute top-1/3 -right-20 h-112.5 w-112.5 rounded-full bg-cyan-500/10 blur-[140px]"
         aria-hidden="true"
       />
 
@@ -136,7 +151,7 @@ export function HeroVideoSection() {
             <div className="mt-8 flex flex-col gap-3.5 sm:flex-row sm:items-center">
               <Link
                 href="#produkty"
-                className="group inline-flex items-center justify-center gap-2.5 rounded-xl border border-amber-400/80 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-zinc-950 shadow-[0_0_30px_rgba(229,184,105,0.35)] transition-all hover:brightness-105 active:scale-[0.98]"
+                className="group inline-flex items-center justify-center gap-2.5 rounded-xl border border-amber-400/80 bg-linear-to-r from-amber-400 via-amber-300 to-amber-500 px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-zinc-950 shadow-[0_0_30px_rgba(229,184,105,0.35)] transition-all hover:brightness-105 active:scale-[0.98]"
               >
                 <span>Zamów teraz z zestawem miarowym</span>
               </Link>
@@ -173,14 +188,14 @@ export function HeroVideoSection() {
             <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
               {/* Outer decorative ambient glow ring */}
               <div
-                className="absolute -inset-1.5 rounded-[2rem] bg-gradient-to-r from-amber-500/30 via-cyan-500/20 to-amber-500/30 opacity-70 blur-xl transition-all duration-700"
+                className="absolute -inset-1.5 rounded-[2rem] bg-linear-to-r from-amber-500/30 via-cyan-500/20 to-amber-500/30 opacity-70 blur-xl transition-all duration-700"
                 aria-hidden="true"
               />
 
               {/* Main Video Container Frame */}
               <div className="relative overflow-hidden rounded-[1.75rem] border border-amber-500/30 bg-zinc-950 shadow-2xl">
-                {/* 16:10 or 4:3 high-end ratio video frame */}
-                <div className="relative aspect-[4/3] sm:aspect-[16/11] w-full overflow-hidden bg-black">
+                {/* Unobstructed video frame */}
+                <div className="relative aspect-16/10 sm:aspect-16/10 w-full overflow-hidden bg-black">
                   <video
                     ref={videoRef}
                     src="/videos/ring-video.mp4"
@@ -191,11 +206,11 @@ export function HeroVideoSection() {
                     className="h-full w-full object-cover object-center transition-transform duration-700 hover:scale-[1.02]"
                   />
 
-                  {/* Dark subtle vignette around the edges */}
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+                  {/* Subtle top vignette only for badge readability */}
+                  <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-linear-to-b from-black/60 via-black/20 to-transparent" />
 
                   {/* Top HUD Overlay */}
-                  <div className="absolute top-4 inset-x-4 flex items-center justify-between z-10">
+                  <div className="absolute top-3.5 inset-x-3.5 sm:top-4 sm:inset-x-4 flex items-center justify-between z-10">
                     {/* Live biometrics badge with pulsing green light */}
                     <div className="flex items-center gap-2 rounded-full border border-emerald-500/30 bg-black/60 px-3 py-1 backdrop-blur-md">
                       <span className="relative flex h-2 w-2">
@@ -237,97 +252,80 @@ export function HeroVideoSection() {
                       </button>
                     </div>
                   </div>
+                </div>
 
-                  {/* Floating Live Telemetry Badge (Middle Right) */}
-                  <div className="absolute right-4 top-16 hidden sm:flex items-center gap-2.5 rounded-xl border border-amber-500/30 bg-zinc-950/75 p-2.5 backdrop-blur-md shadow-lg">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">
-                      <Heart className="h-4 w-4 animate-pulse fill-red-500/40" />
-                    </div>
+                {/* Dedicated Status & Telemetry Card BELOW the video (no overlay, video is 100% visible) */}
+                <div className="border-t border-zinc-800/80 bg-linear-to-b from-zinc-900/90 via-zinc-950/95 to-zinc-950/95 p-4 sm:p-5"> 
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                      <div className="text-[10px] uppercase tracking-wider text-zinc-400">
-                        Tętno PPG
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="font-serif text-base font-bold text-white">
-                          {heartRate}
-                        </span>
-                        <span className="text-[10px] text-amber-300 font-semibold">
-                          BPM
+                      <div className="flex items-center gap-2">
+                        <h2 className="font-serif text-base font-semibold tracking-wide text-white">
+                          Inteligentny pierścień
+                        </h2>
+                        <span className="rounded bg-amber-400/20 px-1.5 py-0.5 text-[9px] font-bold text-amber-300 uppercase">
+                          Gen 3
                         </span>
                       </div>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        Tytanowa powłoka lotnicza Ti-6Al • Sensory optyczne PPG
+                      </p>
                     </div>
-                    {/* SVG mini heart pulse wave */}
-                    <div className="w-12 h-6 pl-1 opacity-80">
-                      <svg viewBox="0 0 60 24" className="w-full h-full stroke-emerald-400 fill-none stroke-[2]">
-                        <path d="M 0 12 L 15 12 L 20 4 L 25 20 L 30 7 L 35 15 L 40 12 L 60 12" />
-                      </svg>
+
+                    {/* Live status indicators */}
+                    <div className="flex items-center gap-3 border-t border-zinc-800/80 pt-2 sm:border-t-0 sm:pt-0">
+                      {/* Heart Rate Indicator */}
+                      <div className="flex items-center gap-1.5">
+                        <Heart className="h-3.5 w-3.5 text-red-400 animate-pulse" />
+                        <span className="font-mono text-xs font-bold text-white">
+                          {heartRate} <span className="text-[10px] text-zinc-400 font-normal">BPM</span>
+                        </span>
+                      </div>
+
+                      <div className="h-3.5 w-px bg-zinc-800" />
+
+                      <div className="flex items-center gap-1.5">
+                        <Activity className="h-3.5 w-3.5 text-emerald-400" />
+                        <span className="text-xs font-semibold text-zinc-200">
+                          Gotowość: 94%
+                        </span>
+                      </div>
+
+                      <div className="h-3.5 w-px bg-zinc-800" />
+
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Zsynchronizowano</span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Bottom Integrated Glass Card (matching the image design!) */}
-                  <div className="absolute inset-x-3 bottom-3 sm:inset-x-4 sm:bottom-4 rounded-xl border border-amber-500/25 bg-gradient-to-b from-zinc-900/90 via-zinc-950/95 to-zinc-950/95 p-3.5 sm:p-4 backdrop-blur-xl shadow-2xl">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h2 className="font-serif text-sm font-semibold tracking-wide text-white sm:text-base">
-                            Inteligentny pierścień
-                          </h2>
-                          <span className="rounded bg-amber-400/20 px-1.5 py-0.5 text-[9px] font-bold text-amber-300 uppercase">
-                            Gen 3
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-zinc-400 mt-0.5">
-                          Tytanowa powłoka lotnicza Ti-6Al • Sensory optyczne PPG
-                        </p>
-                      </div>
-
-                      {/* Live status indicators */}
-                      <div className="flex items-center gap-3 border-t border-zinc-800/80 pt-2 sm:border-t-0 sm:pt-0">
-                        <div className="flex items-center gap-1.5">
-                          <Activity className="h-3.5 w-3.5 text-emerald-400" />
-                          <div className="text-right">
-                            <span className="block text-[11px] font-bold text-zinc-200">
-                              Gotowość: 94%
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="h-4 w-px bg-zinc-800" />
-
-                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-400">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          <span className="hidden sm:inline">Zsynchronizowano</span>
-                          <span className="sm:hidden">OK</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Finish preview pills */}
-                    <div className="mt-3 flex items-center justify-between border-t border-zinc-800/60 pt-2.5 text-[11px]">
+                  {/* Finish preview & interactive selection */}
+                  <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-zinc-800/60 pt-3 text-[11px]">
+                    <div className="flex items-center gap-2">
                       <span className="text-zinc-500 text-[10px] uppercase tracking-wider">
-                        Dostępne wykończenia:
+                        Wykończenie:
                       </span>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => setActiveFinish("black")}
-                          className={`flex items-center gap-1 rounded-full px-2 py-0.5 transition ${
+                          className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 transition ${
                             activeFinish === "black"
-                              ? "bg-zinc-800 text-white border border-amber-500/40"
-                              : "text-zinc-400 hover:text-zinc-200"
+                              ? "bg-zinc-800 text-white border border-amber-500/40 shadow-sm"
+                              : "text-zinc-400 hover:text-zinc-200 bg-zinc-900/50"
                           }`}
                         >
-                          <span className="h-2 w-2 rounded-full bg-zinc-800 ring-1 ring-zinc-500" />
+                          <span className="h-2 w-2 rounded-full bg-zinc-700 ring-1 ring-zinc-500" />
                           <span>Czarny</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => setActiveFinish("gold")}
-                          className={`flex items-center gap-1 rounded-full px-2 py-0.5 transition ${
+                          className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 transition ${
                             activeFinish === "gold"
-                              ? "bg-zinc-800 text-amber-200 border border-amber-500/40"
-                              : "text-zinc-400 hover:text-zinc-200"
+                              ? "bg-zinc-800 text-amber-200 border border-amber-500/40 shadow-sm"
+                              : "text-zinc-400 hover:text-zinc-200 bg-zinc-900/50"
                           }`}
                         >
                           <span className="h-2 w-2 rounded-full bg-amber-400 ring-1 ring-amber-300" />
@@ -337,10 +335,10 @@ export function HeroVideoSection() {
                         <button
                           type="button"
                           onClick={() => setActiveFinish("silver")}
-                          className={`flex items-center gap-1 rounded-full px-2 py-0.5 transition ${
+                          className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 transition ${
                             activeFinish === "silver"
-                              ? "bg-zinc-800 text-zinc-200 border border-amber-500/40"
-                              : "text-zinc-400 hover:text-zinc-200"
+                              ? "bg-zinc-800 text-zinc-200 border border-amber-500/40 shadow-sm"
+                              : "text-zinc-400 hover:text-zinc-200 bg-zinc-900/50"
                           }`}
                         >
                           <span className="h-2 w-2 rounded-full bg-zinc-300 ring-1 ring-zinc-400" />
@@ -348,6 +346,14 @@ export function HeroVideoSection() {
                         </button>
                       </div>
                     </div>
+
+                    <Link
+                      href="#produkty"
+                      className="inline-flex items-center gap-1.5 text-amber-400 hover:text-amber-300 transition font-medium"
+                    >
+                      <span>{finishDetails[activeFinish].name} ({finishDetails[activeFinish].price})</span>
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
                   </div>
                 </div>
               </div>

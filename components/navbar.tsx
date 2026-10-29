@@ -31,7 +31,7 @@ export function Navbar() {
           href="/"
           className="group flex items-center gap-2.5 transition-opacity hover:opacity-90"
         >
-          <div className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/30 bg-gradient-to-br from-zinc-800 to-zinc-950 shadow-[0_0_15px_rgba(229,184,105,0.15)] group-hover:border-amber-400/50">
+          <div className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/30 bg-linear-to-br from-zinc-800 to-zinc-950 shadow-[0_0_15px_rgba(229,184,105,0.15)] group-hover:border-amber-400/50">
             <span className="font-serif text-sm font-bold tracking-wider text-amber-300">
               A
             </span>
@@ -84,7 +84,7 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => setIsCartOpen(true)}
-            className="relative flex items-center gap-2 rounded-lg border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-amber-500/20 to-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-200 shadow-[0_0_20px_rgba(229,184,105,0.12)] transition hover:border-amber-400 hover:bg-amber-500/25 active:scale-95"
+            className="relative flex items-center gap-2 rounded-lg border border-amber-500/40 bg-linear-to-r from-amber-500/10 via-amber-500/20 to-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-200 shadow-[0_0_20px_rgba(229,184,105,0.12)] transition hover:border-amber-400 hover:bg-amber-500/25 active:scale-95"
             aria-label={`Koszyk z ${totalCount} produktami`}
           >
             <ShoppingBag className="h-4 w-4 text-amber-400" />
