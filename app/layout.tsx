@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { Navbar } from "@/components/navbar";
+import { CartProvider } from "@/context/cart-context";
+import { CartDrawer } from "@/components/cart-drawer";
+import { SizeGuideModal } from "@/components/size-guide-modal";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -56,7 +60,12 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-full flex flex-col bg-[#070709] text-zinc-100 selection:bg-amber-500/30 selection:text-amber-200">
-        {children}
+        <CartProvider>
+          <Navbar />
+          {children}
+          <CartDrawer />
+          <SizeGuideModal />
+        </CartProvider>
       </body>
     </html>
   );

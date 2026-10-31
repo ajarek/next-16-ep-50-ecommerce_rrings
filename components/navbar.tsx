@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   ShoppingBag,
   LayoutGrid,
@@ -15,12 +16,13 @@ import { useCart } from "@/context/cart-context";
 export function Navbar() {
   const { totalCount, setIsCartOpen } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const navLinks = [
-    { label: "Produkty", href: "#produkty" },
-    { label: "O nas", href: "#o-nas" },
+    { label: "Produkty", href: "/products" },
+    { label: "O nas", href: "/#o-nas" },
     { label: "Salony i Lokalizacja", href: "#salony" },
-    { label: "Technologia & Pomiary", href: "#technologia" },
+    { label: "Technologia & Pomiary", href: "/#technologia" },
   ];
 
   return (
@@ -46,15 +48,27 @@ export function Navbar() {
 
         {/* Desktop Navigation Links */}
         <nav className="hidden items-center gap-7 lg:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="text-xs font-medium tracking-wider text-zinc-300 transition-colors hover:text-amber-300"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive =
+              link.href === pathname ||
+              (link.href === "/products" && pathname.startsWith("/products"));
+            return (
+              <Link
+                key={link.label}
+                href={link.href}
+                className={`text-xs tracking-wider transition-colors relative py-1 ${
+                  isActive
+                    ? "font-semibold text-amber-300"
+                    : "font-medium text-zinc-300 hover:text-amber-300"
+                }`}
+              >
+                {link.label}
+                {isActive && (
+                  <span className="absolute inset-x-0 -bottom-1 h-0.5 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(229,184,105,0.8)]" />
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Right side utility icons & cart */}
@@ -139,16 +153,25 @@ export function Navbar() {
       {mobileMenuOpen && (
         <div className="border-b border-zinc-800 bg-[#0c0d12] px-4 py-4 sm:hidden">
           <nav className="flex flex-col gap-3">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium text-zinc-200 hover:text-amber-300"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const isActive =
+                link.href === pathname ||
+                (link.href === "/products" && pathname.startsWith("/products"));
+              return (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`text-sm transition-colors ${
+                    isActive
+                      ? "font-semibold text-amber-300"
+                      : "font-medium text-zinc-200 hover:text-amber-300"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
             <div className="mt-3 flex items-center justify-between border-t border-zinc-800 pt-3 text-xs text-zinc-400">
               <span className="flex items-center gap-1.5">
                 <Globe className="h-3.5 w-3.5 text-amber-400" /> PLN / Polska
