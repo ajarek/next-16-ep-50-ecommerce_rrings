@@ -87,7 +87,7 @@ export function ProductFinishesSection() {
                   </div>
 
                   {/* Product Image */}
-                  <div className="relative my-6 aspect-video w-full overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-950/80">
+                  <div className="relative my-6 aspect-square w-full overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-950/80">
                     <Image
                       src={product.image}
                       alt={product.name}

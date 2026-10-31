@@ -24,7 +24,7 @@ export const PRODUCTS: RingProduct[] = [
     description:
       "Ciepłe 18-karatowe złocenie PVD na rdzeniu z tytanu medycznego. Niezrównany luksus i prestiż.",
     price: 1499,
-    image: "/images/ring-image-1.png",
+    image: "/images/ring-image-9.png",
     availableSizes: [7, 8, 9, 10, 11, 12, 13],
   },
   {
@@ -40,6 +40,72 @@ export const PRODUCTS: RingProduct[] = [
     image: "/images/ring-image-4.png",
     availableSizes: [7, 8, 9, 10, 11, 12, 13],
   },
+  {
+    id: "onyx-ring-gloss-black",
+    name: "Onyx Ring Gloss Black",
+    series: "SERIA TITAN STEALTH",
+    badge: "Nowość",
+    finish: "black",
+    finishName: "Czarny Połysk",
+    description:
+      "Intensywna czerń z eleganckim, lustrzanym wykończeniem. Minimalistyczny design podkreślający nowoczesny charakter.",
+    price: 1399,
+    image: "/images/ring-image-4.png",
+    availableSizes: [7, 8, 9, 10, 11, 12, 13],
+  },
+  {
+    id: "titan-ring-brushed-silver",
+    name: "Titan Ring Brushed Silver",
+    series: "SERIA TITAN CLASSIC",
+    badge: "Bestseller",
+    finish: "silver",
+    finishName: "Szczotkowane Srebro",
+    description:
+      "Naturalny odcień tytanu z precyzyjnie szczotkowaną powierzchnią. Ponadczasowa elegancja i wyjątkowa trwałość.",
+    price: 1199,
+    image: "/images/ring-image-5.png",
+    availableSizes: [7, 8, 9, 10, 11, 12, 13],
+  },
+  {
+    id: "nova-ring-rose-gold",
+    name: "Nova Ring Rose Gold",
+    series: "SERIA TITAN LUXE",
+    badge: "Limitowana edycja",
+    finish: "rose-gold",
+    finishName: "Różowe Złoto",
+    description:
+      "Wyrafinowane wykończenie w odcieniu różowego złota. Subtelny połysk i lekka konstrukcja z wysokiej jakości tytanu.",
+    price: 1499,
+    image: "/images/ring-image-6.png",
+    availableSizes: [7, 8, 9, 10, 11, 12, 13],
+  },
+  {
+    id: "shadow-ring-gunmetal",
+    name: "Shadow Ring Gunmetal",
+    series: "SERIA TITAN STEALTH",
+    badge: "Nowość",
+    finish: "gunmetal",
+    finishName: "Grafitowy Metal",
+    description:
+      "Ciemny grafitowy odcień z metalicznym wykończeniem. Industrialny styl połączony z minimalistyczną formą.",
+    price: 1349,
+    image: "/images/ring-image-7.png",
+    availableSizes: [7, 8, 9, 10, 11, 12, 13],
+  },
+  {
+    id: "aurora-ring-titanium-blue",
+    name: "Aurora Ring Titanium Blue",
+    series: "SERIA TITAN SIGNATURE",
+    badge: "Ekskluzywny",
+    finish: "blue",
+    finishName: "Titanium Blue",
+    description:
+      "Głęboki metaliczny błękit z nowoczesnym wykończeniem. Wyjątkowy kolor inspirowany technologią i elegancją.",
+    price: 1449,
+    image: "/images/ring-image-8.png",
+    availableSizes: [7, 8, 9, 10, 11, 12, 13],
+  },
+
 ];
 
 export const SIZE_CHART: SizeChartItem[] = [
