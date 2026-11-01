@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   X,
   ShoppingBag,
@@ -11,6 +12,7 @@ import {
   Truck,
   ShieldCheck,
   CheckCircle,
+  ArrowLeft,
 } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 
@@ -247,19 +249,32 @@ export function CartDrawer() {
               </div>
             </div>
 
-            {/* Checkout Button */}
-            <button
-              type="button"
-              disabled={isCheckingOut}
-              onClick={handleCheckout}
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-amber-400 bg-amber-400 py-3.5 text-xs font-bold uppercase tracking-wider text-zinc-950 shadow-[0_0_25px_rgba(229,184,105,0.3)] hover:bg-amber-300 transition active:scale-[0.98] disabled:opacity-60"
-            >
-              {isCheckingOut ? (
-                <span>Przetwarzanie płatności...</span>
-              ) : (
-                <span>Przejdź do kasy</span>
-              )}
-            </button>
+            {/* Checkout & Continue Shopping Actions */}
+            <div className="space-y-3">
+              <button
+                type="button"
+                disabled={isCheckingOut}
+                onClick={handleCheckout}
+                className="w-full flex items-center justify-center gap-2 rounded-xl border border-amber-400 bg-amber-400 py-3.5 text-xs font-bold uppercase tracking-wider text-zinc-950 shadow-[0_0_25px_rgba(229,184,105,0.3)] hover:bg-amber-300 transition active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+              >
+                {isCheckingOut ? (
+                  <span>Przetwarzanie płatności...</span>
+                ) : (
+                  <span>Przejdź do kasy</span>
+                )}
+              </button>
+
+              <div className="text-center">
+                <Link
+                  href="/products"
+                  onClick={() => setIsCartOpen(false)}
+                  className="group inline-flex items-center justify-center gap-1.5 text-xs font-medium text-zinc-400 transition hover:text-amber-300 hover:underline cursor-pointer"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+                  <span>Kontynuuj zakupy</span>
+                </Link>
+              </div>
+            </div>
 
             <div className="flex items-center justify-center gap-3 text-[10px] text-zinc-500">
               <span className="flex items-center gap-1">

@@ -22,7 +22,7 @@ export function Navbar() {
     { label: "Produkty", href: "/products" },
     { label: "O nas", href: "/#o-nas" },
     { label: "Salony i Lokalizacja", href: "#salony" },
-    { label: "Technologia & Pomiary", href: "/#technologia" },
+    { label: "Technologia & Pomiary", href: "/technology" },
   ];
 
   return (
@@ -87,7 +87,7 @@ export function Navbar() {
 
           {/* Admin panel link */}
           <Link
-            href="#panel-admina"
+            href="/admin"
             className="flex items-center gap-1.5 text-xs text-zinc-400 transition hover:text-zinc-200"
           >
             <LayoutGrid className="h-3.5 w-3.5 text-zinc-400" />
