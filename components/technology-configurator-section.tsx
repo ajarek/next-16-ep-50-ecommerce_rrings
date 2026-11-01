@@ -190,7 +190,7 @@ export function TechnologyConfiguratorSection() {
           {/* Left Column: Image & Finish Selection */}
           <div>
             {/* Product Image */}
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-zinc-800/90 bg-zinc-950">
+            <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-zinc-800/90 bg-zinc-950">
               <Image
                 src="/images/ring-image-2.jpg"
                 alt="Dłoń z trzema pierścieniami Aura Ring Gen III"

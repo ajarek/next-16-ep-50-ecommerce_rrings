@@ -50,6 +50,7 @@ export default function RootLayout({
   return (
     <html
       lang="pl"
+      data-scroll-behavior="smooth"
       className={cn(
         "h-full dark antialiased scroll-smooth",
         inter.variable,

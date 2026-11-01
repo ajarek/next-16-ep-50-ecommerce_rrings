@@ -21,7 +21,7 @@ export function Navbar() {
   const navLinks = [
     { label: "Produkty", href: "/products" },
     { label: "O nas", href: "/#o-nas" },
-    { label: "Salony i Lokalizacja", href: "#salony" },
+    { label: "Salony i Lokalizacja", href: "/location" },
     { label: "Technologia & Pomiary", href: "/technology" },
   ];
 

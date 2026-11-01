@@ -59,7 +59,7 @@ export function TechnologySpecsSection() {
         {/* Specification Table */}
         <div className="mt-8 overflow-hidden rounded-2xl border border-zinc-800/90">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left">
+            <table className="w-full min-w-180 text-left">
               <thead>
                 <tr className="border-b border-zinc-800 bg-zinc-900/90 text-[10px] uppercase tracking-wider text-zinc-400">
                   <th scope="col" className="px-5 py-3.5 font-semibold">
