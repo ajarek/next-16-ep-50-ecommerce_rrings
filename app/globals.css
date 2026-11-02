@@ -129,3 +129,32 @@
     @apply font-sans;
   }
 }
+
+/* Leaflet — ciemny wariant darmowych kafelków OpenStreetMap (bez klucza API).
+   Filtr dotyczy wyłącznie panelu kafelków, więc markery i etykiety zachowują kolory. */
+.leaflet-container .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9)
+    saturate(0.8);
+}
+
+/* Leaflet — styl kontrolek zgodny z motywem AURA RING */
+.leaflet-container .leaflet-bar a,
+.leaflet-container .leaflet-bar a:hover {
+  background-color: #18181b;
+  color: #e4e4e7;
+  border-bottom-color: #3f3f46;
+}
+
+.leaflet-container .leaflet-bar a:hover {
+  background-color: #27272a;
+}
+
+.leaflet-container .leaflet-control-attribution {
+  background: rgba(9, 9, 11, 0.85);
+  color: #a1a1aa;
+  font-size: 10px;
+}
+
+.leaflet-container .leaflet-control-attribution a {
+  color: #d4d4d8;
+}

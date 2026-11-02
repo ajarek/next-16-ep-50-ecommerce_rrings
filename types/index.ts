@@ -40,3 +40,17 @@ export interface SizeChartItem {
   diameterMm: number
   circumferenceMm: number
 }
+
+export interface Salon {
+  id: string
+  city: string
+  name: string
+  tag: string
+  hours: string
+  address: string
+  details: string[]
+  mapLabel: string
+  availability: string[]
+  lat: number
+  lng: number
+}

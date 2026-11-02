@@ -1,4 +1,4 @@
-import { RingProduct, Testimonial, SizeChartItem } from "@/types";
+import { RingProduct, Testimonial, SizeChartItem, Salon } from "@/types";
 
 export const PRODUCTS: RingProduct[] = [
   {
@@ -106,6 +106,69 @@ export const PRODUCTS: RingProduct[] = [
     availableSizes: [7, 8, 9, 10, 11, 12, 13],
   },
 
+];
+
+export const SALONS: Salon[] = [
+  {
+    id: "warszawa-plac-trzech-krzyzy",
+    city: "Warszawa",
+    name: "Plac Trzech Krzyży 12",
+    tag: "FLAGOWY • WARSZAWA",
+    hours: "10:00 - 20:00",
+    address: "00-499 Warszawa, Śródmieście",
+    details: [
+      "Przymiar rozmiarów 6-13",
+      "Odbiór od ręki (magazyn)",
+      "Doradca biometryczny",
+      "Aura Lounge & Espresso",
+    ],
+    mapLabel: "Butik Aura Warszawa",
+    availability: ["Dzisiaj", "Jutro"],
+    lat: 52.2346,
+    lng: 21.0243,
+  },
+  {
+    id: "krakow-szewska-4",
+    city: "Kraków",
+    name: "Rynek Główny / Szewska 4",
+    tag: "KRAKÓW • STARE MIASTO",
+    hours: "10:00 - 19:00",
+    address: "31-009 Kraków, Pasaż Historyczny",
+    details: ["Przymiar rozmiarów 6-13", "Laserowy skan dłoni"],
+    mapLabel: "Butik Aura Kraków",
+    availability: ["Dzisiaj", "Jutro"],
+    lat: 50.0621,
+    lng: 19.9375,
+  },
+  {
+    id: "wroclaw-renoma",
+    city: "Wrocław",
+    name: "DH Renoma / Świdnicka 40",
+    tag: "WROCŁAW • RENOMA",
+    hours: "10:00 - 21:00",
+    address: "50-028 Wrocław, Poziom 0 (Atrium)",
+    details: ["Wszystkie 4 wykończenia", "Ekspresowa kalibracja"],
+    mapLabel: "Butik Aura Wrocław",
+    availability: ["Jutro"],
+    lat: 51.1078,
+    lng: 17.03,
+  },
+  {
+    id: "gdansk-galeria-baltycka",
+    city: "Gdańsk",
+    name: "Galeria Bałtycka / Wrzeszcz",
+    tag: "GDAŃSK • TRÓJMIASTO",
+    hours: "10:00 - 21:00",
+    address: "Al. Grunwaldzka 141, 80-264 Gdańsk",
+    details: [
+      "Kompletny przymiar 6-13",
+      "Test szczelności 5ATM (100M)",
+    ],
+    mapLabel: "Butik Aura Gdańsk",
+    availability: ["Jutro"],
+    lat: 54.4014,
+    lng: 18.5923,
+  },
 ];
 
 export const SIZE_CHART: SizeChartItem[] = [
