@@ -1,14 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  ZoomControl,
-  AttributionControl,
-  useMap,
-} from "react-leaflet";
+import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Salon } from "@/types";
@@ -20,6 +12,8 @@ const TILE_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 const CITY_ZOOM = 13;
+const POLAND_CENTER: L.LatLngTuple = [52.2, 19.5];
+const POLAND_ZOOM = 6;
 
 interface LocationMapProps {
   salons: Salon[];
@@ -28,10 +22,7 @@ interface LocationMapProps {
 }
 
 function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 function createMarkerIcon(salon: Salon, isSelected: boolean): L.DivIcon {
@@ -65,39 +56,86 @@ function createMarkerIcon(salon: Salon, isSelected: boolean): L.DivIcon {
   });
 }
 
-function MapController({
+export default function LocationMap({
   salons,
   selectedId,
-}: {
-  salons: Salon[];
-  selectedId: string;
-}) {
-  const map = useMap();
+  onSelect,
+}: LocationMapProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const onSelectRef = useRef(onSelect);
   const prevViewKey = useRef<string | null>(null);
   const prevSelectedId = useRef<string | null>(null);
 
+  // Zawsze aktualny callback bez ponownego inicjalizowania mapy
   useEffect(() => {
+    onSelectRef.current = onSelect;
+  }, [onSelect]);
+
+  // Inicjalizacja mapy. Cleanup usuwa instancję Leafleta i zwalnia kontener,
+  // dzięki czemu ponowne montowanie (React StrictMode) tworzy czystą mapę.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const map = L.map(container, {
+      center: POLAND_CENTER,
+      zoom: POLAND_ZOOM,
+      scrollWheelZoom: false,
+      zoomControl: false,
+    });
+
+    L.tileLayer(TILE_URL, {
+      attribution: TILE_ATTRIBUTION,
+      maxZoom: 19,
+    }).addTo(map);
+
+    L.control.zoom({ position: "topleft" }).addTo(map);
+
+    const markersLayer = L.layerGroup().addTo(map);
+
+    mapRef.current = map;
+    markersLayerRef.current = markersLayer;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      markersLayerRef.current = null;
+    };
+  }, []);
+
+  // Synchronizacja markerów i widoku z aktualnym filtrem oraz wyborem salonu
+  useEffect(() => {
+    const map = mapRef.current;
+    const markersLayer = markersLayerRef.current;
+    if (!map || !markersLayer) return;
+
+    const reduceMotion = prefersReducedMotion();
     const viewKey = salons.map((salon) => salon.id).join(",");
     const isFirstRender = prevViewKey.current === null;
     const viewChanged = prevViewKey.current !== viewKey;
     const selectionChanged = prevSelectedId.current !== selectedId;
+
     prevViewKey.current = viewKey;
     prevSelectedId.current = selectedId;
 
-    if (salons.length === 0) return;
-
-    const reduceMotion = prefersReducedMotion();
-
-    const fitAll = () => {
-      const bounds = L.latLngBounds(
-        salons.map((salon): L.LatLngTuple => [salon.lat, salon.lng])
-      );
-      map.fitBounds(bounds, {
-        padding: [50, 50],
-        maxZoom: 11,
-        animate: !reduceMotion,
+    // Odbudowa markerów
+    markersLayer.clearLayers();
+    salons.forEach((salon) => {
+      const isSelected = salon.id === selectedId;
+      const marker = L.marker([salon.lat, salon.lng], {
+        icon: createMarkerIcon(salon, isSelected),
+        zIndexOffset: isSelected ? 1000 : 0,
+        title: salon.mapLabel,
+        alt: salon.mapLabel,
       });
-    };
+
+      marker.on("click", () => onSelectRef.current(salon.id));
+      markersLayer.addLayer(marker);
+    });
+
+    if (salons.length === 0) return;
 
     const goToSalon = (salon: Salon) => {
       const latlng: L.LatLngTuple = [salon.lat, salon.lng];
@@ -108,11 +146,19 @@ function MapController({
       }
     };
 
-    if (isFirstRender) {
-      // Pierwszy widok: wszystkie widoczne salony naraz
-      fitAll();
-    } else if (viewChanged) {
-      // Zmiana filtra/wyszukiwarki: dopasuj widok do wyników
+    const fitAll = () => {
+      const bounds = L.latLngBounds(
+        salons.map((salon): L.LatLngTuple => [salon.lat, salon.lng])
+      );
+      map.fitBounds(bounds, {
+        padding: [50, 50],
+        maxZoom: 11,
+        animate: !isFirstRender && !reduceMotion,
+      });
+    };
+
+    if (isFirstRender || viewChanged) {
+      // Pierwszy render lub zmiana filtra/wyszukiwarki
       if (salons.length === 1) {
         goToSalon(salons[0]);
       } else {
@@ -122,51 +168,12 @@ function MapController({
       const selected = salons.find((salon) => salon.id === selectedId);
       if (selected) goToSalon(selected);
     }
-  }, [salons, selectedId, map]);
-
-  return null;
-}
-
-export default function LocationMap({
-  salons,
-  selectedId,
-  onSelect,
-}: LocationMapProps) {
-  const initialSalon =
-    salons.find((salon) => salon.id === selectedId) ?? salons[0];
-  const center: L.LatLngTuple = initialSalon
-    ? [initialSalon.lat, initialSalon.lng]
-    : [52.2, 19.5];
+  }, [salons, selectedId]);
 
   return (
-    <MapContainer
-      center={center}
-      zoom={initialSalon ? CITY_ZOOM : 6}
-      scrollWheelZoom={false}
-      zoomControl={false}
-      attributionControl={false}
-      className="absolute inset-0 z-0 h-full w-full"
-    >
-      <TileLayer
-        url={TILE_URL}
-        attribution={TILE_ATTRIBUTION}
-        maxZoom={19}
-      />
-      <ZoomControl position="topleft" />
-      <AttributionControl position="bottomright" prefix="" />
-      <MapController salons={salons} selectedId={selectedId} />
-      {salons.map((salon) => {
-        const isSelected = salon.id === selectedId;
-        return (
-          <Marker
-            key={`${salon.id}-${isSelected}`}
-            position={[salon.lat, salon.lng]}
-            icon={createMarkerIcon(salon, isSelected)}
-            zIndexOffset={isSelected ? 1000 : 0}
-            eventHandlers={{ click: () => onSelect(salon.id) }}
-          />
-        );
-      })}
-    </MapContainer>
+    <div
+      ref={containerRef}
+      className="absolute inset-0 z-0 h-full w-full bg-[#0b0d12]"
+    />
   );
 }
