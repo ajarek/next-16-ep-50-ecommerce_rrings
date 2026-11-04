@@ -1,0 +1,43 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Konto administratora konsoli AURA TELEMETRY CLOUD.
+    function isAdmin() {
+      return isSignedIn()
+        && request.auth.token.email == 'ajarek2101@gmail.com';
+    }
+
+    // Profil użytkownika: właściciel zarządza tylko własnym dokumentem,
+    // administrator może go odczytać, ale nie modyfikować.
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.email is string
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 120
+        && request.resource.data.lastLoginAt is timestamp;
+
+      allow update: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.email is string
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 120;
+
+      allow delete: if false;
+    }
+
+    // Domyślna blokada — żadne inne kolekcje nie są publicznie dostępne.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

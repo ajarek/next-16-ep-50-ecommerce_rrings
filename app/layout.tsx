@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/navbar";
 import { CartProvider } from "@/context/cart-context";
+import { AuthProvider } from "@/context/auth-context";
 import { CartDrawer } from "@/components/cart-drawer";
 import { SizeGuideModal } from "@/components/size-guide-modal";
 
@@ -61,12 +62,14 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-full flex flex-col bg-[#070709] text-zinc-100 selection:bg-amber-500/30 selection:text-amber-200">
-        <CartProvider>
-          <Navbar />
-          {children}
-          <CartDrawer />
-          <SizeGuideModal />
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <Navbar />
+            {children}
+            <CartDrawer />
+            <SizeGuideModal />
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

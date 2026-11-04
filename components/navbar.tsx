@@ -2,21 +2,28 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ShoppingBag,
-  LayoutGrid,
-  User,
+  LayoutDashboard,
   Globe,
   Menu,
   X,
+  Loader2,
+  LogOut,
+  UserRound,
 } from "lucide-react";
 import { useCart } from "@/context/cart-context";
+import { useAuth } from "@/context/auth-context";
+import { AccountMenu } from "@/components/account-menu";
 
 export function Navbar() {
   const { totalCount, setIsCartOpen } = useCart();
+  const { user, isAdmin, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobileSigningOut, setIsMobileSigningOut] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const navLinks = [
     { label: "Produkty", href: "/products" },
@@ -24,6 +31,26 @@ export function Navbar() {
     { label: "Salony i Lokalizacja", href: "/location" },
     { label: "Technologia & Pomiary", href: "/technology" },
   ];
+
+  const handleMobileSignOut = async () => {
+    if (isMobileSigningOut) return;
+
+    setIsMobileSigningOut(true);
+
+    try {
+      await signOut();
+    } catch (error) {
+      console.warn(
+        "[auth] Wylogowanie nie powiodło się.",
+        error instanceof Error ? error.message : "nieznany błąd",
+      );
+    } finally {
+      setMobileMenuOpen(false);
+      setIsMobileSigningOut(false);
+      router.replace("/");
+      router.refresh();
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-800/80 bg-[#070709]/85 backdrop-blur-md">
@@ -71,7 +98,7 @@ export function Navbar() {
           })}
         </nav>
 
-        {/* Right side utility icons & cart */}
+        {/* Right side utility icons, account & cart */}
         <div className="hidden items-center gap-4 sm:flex">
           {/* Currency / Language selector */}
           <button
@@ -84,15 +111,6 @@ export function Navbar() {
             <span className="text-zinc-600">|</span>
             <span>PL</span>
           </button>
-
-          {/* Admin panel link */}
-          <Link
-            href="/admin"
-            className="flex items-center gap-1.5 text-xs text-zinc-400 transition hover:text-zinc-200"
-          >
-            <LayoutGrid className="h-3.5 w-3.5 text-zinc-400" />
-            <span className="hidden md:inline">Panel Admina</span>
-          </Link>
 
           {/* Cart Button */}
           <button
@@ -108,14 +126,8 @@ export function Navbar() {
             </span>
           </button>
 
-          {/* Login Link */}
-          <Link
-            href="#logowanie"
-            className="flex items-center gap-1.5 text-xs text-zinc-300 transition hover:text-white"
-          >
-            <User className="h-3.5 w-3.5 text-zinc-400" />
-            <span className="hidden md:inline">Logowanie</span>
-          </Link>
+          {/* Account / Login */}
+          <AccountMenu />
         </div>
 
         {/* Mobile menu trigger */}
@@ -139,6 +151,7 @@ export function Navbar() {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="rounded-lg border border-zinc-800 bg-zinc-900 p-2 text-zinc-300 hover:text-white"
             aria-label="Menu nawigacji"
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? (
               <X className="h-5 w-5" />
@@ -172,17 +185,68 @@ export function Navbar() {
                 </Link>
               );
             })}
-            <div className="mt-3 flex items-center justify-between border-t border-zinc-800 pt-3 text-xs text-zinc-400">
+
+            <div className="mt-3 flex flex-col gap-3 border-t border-zinc-800 pt-3 text-xs text-zinc-400">
               <span className="flex items-center gap-1.5">
                 <Globe className="h-3.5 w-3.5 text-amber-400" /> PLN / Polska
               </span>
-              <Link
-                href="#logowanie"
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-amber-300"
-              >
-                Zaloguj się
-              </Link>
+
+              {user ? (
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-medium text-zinc-200">
+                      {user.displayName?.trim() || user.email}
+                    </p>
+                    <p className="truncate text-[11px] text-zinc-500">
+                      {user.email}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {isAdmin ? (
+                      <Link
+                        href="/admin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-amber-300"
+                      >
+                        <LayoutDashboard className="h-3 w-3" aria-hidden="true" />
+                        Admin
+                      </Link>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={handleMobileSignOut}
+                      disabled={isMobileSigningOut}
+                      className="inline-flex items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-300 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isMobileSigningOut ? (
+                        <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <LogOut className="h-3 w-3" aria-hidden="true" />
+                      )}
+                      Wyloguj
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Link
+                    href="/logowanie"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="inline-flex items-center gap-1.5 font-semibold text-amber-300"
+                  >
+                    <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
+                    Zaloguj się
+                  </Link>
+                  <span className="text-zinc-600">•</span>
+                  <Link
+                    href="/rejestracja"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-zinc-300"
+                  >
+                    Utwórz konto
+                  </Link>
+                </div>
+              )}
             </div>
           </nav>
         </div>
