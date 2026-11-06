@@ -17,6 +17,7 @@ interface CartContextType {
   addToCart: (product: RingProduct, size: number) => void
   removeFromCart: (cartItemId: string) => void
   updateQuantity: (cartItemId: string, delta: number) => void
+  clearCart: () => void
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -71,6 +72,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems((prev) => prev.filter((item) => item.id !== cartItemId))
   }
 
+  const clearCart = () => {
+    setItems([])
+  }
+
   const updateQuantity = (cartItemId: string, delta: number) => {
     setItems(
       (prev) =>
@@ -106,6 +111,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         addToCart,
         removeFromCart,
         updateQuantity,
+        clearCart,
       }}
     >
       {children}

@@ -24,6 +24,49 @@ export interface CartItem {
   image: string
 }
 
+export type OrderStatus =
+  | "new"
+  | "sizing-sent"
+  | "awaiting-size"
+  | "preparing-ring"
+  | "completed"
+
+export interface OrderLine {
+  lineId: string
+  productId: string
+  name: string
+  finishName: string
+  finish: RingProduct["finish"]
+  size: number
+  price: number
+  quantity: number
+  image: string
+}
+
+/** Zamówienie zapisane w kolekcji `orders` w Firestore. */
+export interface SalesOrder {
+  id: string
+  number: string
+  userId: string
+  email: string
+  clientName: string
+  items: OrderLine[]
+  subtotal: number
+  includeSizingKit: boolean
+  status: OrderStatus
+  createdAt: Date | null
+  updatedAt: Date | null
+}
+
+/** Stan magazynowy jednego rozmiaru pierścienia (kolekcja `inventory`). */
+export interface InventoryEntry {
+  size: number
+  diameterMm: number
+  circumferenceMm: number
+  stock: number
+  updatedAt: Date | null
+}
+
 export interface Testimonial {
   id: string
   rating: number

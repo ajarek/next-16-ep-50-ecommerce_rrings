@@ -39,6 +39,32 @@ ADMIN_EMAIL=
 używane jest konto `ajarek2101@gmail.com`. Wartość jest sprawdzana
 wyłącznie po stronie serwera.
 
+## Kolekcje Firestore i system sprzedaży
+
+Sprzedaż, magazyn i konsola administratora korzystają z tych samych kolekcji
+Firestore:
+
+- `products/{productId}` — katalog sklepu (nazwa, wykończenie, opis, cena,
+  dostępne rozmiary, zdjęcie, `sortOrder`, `active`). Odczyt jest publiczny,
+  zapis wyłącznie dla administratora. Sklep pokazuje katalog z Firestore, a
+  dopóki kolekcja jest pusta, korzysta z danych w `lib/data.ts`.
+- `inventory/{size}` — stan magazynowy dla rozmiaru (7–13), średnica i
+  obwód. Odczyt i zapis wyłącznie dla administratora.
+- `orders/{orderId}` — zamówienia składane z koszyka: pozycje, kwota, opcja
+  Sizing Kit, status realizacji. Klient widzi tylko własne zamówienia,
+  administrator czyta wszystkie i zmienia `status`.
+- `users/{uid}` — profile użytkowników (patrz niżej).
+
+Kolekcje `products` i `inventory` tworzą się automatycznie przy pierwszym
+wejściu na `/admin` — zadanie `seedSalesCatalog()` (`lib/firebase/catalog.ts`)
+uzupełnia brakujące dokumenty, nie nadpisując istniejących. Kolejne wejścia
+niczego nie zmieniają.
+
+Finalizacja zamówienia wymaga zalogowania. Zamówienie trafia do `orders` i
+pojawia się w konsoli administratora na żywo (`onSnapshot`), podobnie jak
+stany magazynowe. Przyjęcie partii w konsoli zwiększa stan atomowo
+(`increment`).
+
 ## Uwierzytelnianie i dostęp administratora
 
 - Logowanie i rejestracja obsługują **Google** oraz **e-mail/hasło**

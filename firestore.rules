@@ -35,6 +35,55 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Katalog sklepu jest jawny (nazwy, ceny, zdjęcia), a zmienia go wyłącznie
+    // administrator. Kolejność wyświetlania wyznacza pole `sortOrder`.
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Stany magazynowe zawierają dane operacyjne — tylko administrator.
+    match /inventory/{sizeId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Zamówienia: klient tworzy wyłącznie własne zamówienie i widzi tylko
+    // własne dokumenty. Status realizacji zmienia administrator.
+    match /orders/{orderId} {
+      allow read: if isSignedIn()
+        && (isAdmin() || resource.data.userId == request.auth.uid);
+
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.email is string
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.clientName is string
+        && request.resource.data.clientName.size() <= 120
+        && request.resource.data.number is string
+        && request.resource.data.status == 'new'
+        && request.resource.data.items is list
+        && request.resource.data.items.size() > 0
+        && request.resource.data.items.size() <= 20
+        && request.resource.data.subtotal is number
+        && request.resource.data.subtotal >= 0
+        && request.resource.data.includeSizingKit is bool
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+        && request.resource.data.status in [
+          'new',
+          'sizing-sent',
+          'awaiting-size',
+          'preparing-ring',
+          'completed'
+        ]
+        && request.resource.data.updatedAt is timestamp;
+
+      allow delete: if false;
+    }
+
     // Domyślna blokada — żadne inne kolekcje nie są publicznie dostępne.
     match /{document=**} {
       allow read, write: if false;

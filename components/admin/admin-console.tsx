@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -22,89 +22,73 @@ import {
   Thermometer,
   BatteryCharging,
   CheckCircle2,
-  Clock,
   SlidersHorizontal,
   MoreVertical,
   X,
-  Package,
   Zap,
   Menu,
   Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { getUserInitials } from "@/lib/auth/display";
-
-interface OrderItem {
-  id: string;
-  client: string;
-  email: string;
-  model: string;
-  finish: string;
-  finishDotColor: string;
-  size: string;
-  status: string;
-  statusType: "sizing-sent" | "awaiting-size" | "preparing-ring" | "active-iot";
-  amount: string;
-}
+import { isFirebaseConfigured } from "@/lib/firebase/client";
+import { seedSalesCatalog } from "@/lib/firebase/catalog";
+import {
+  getStockStatus,
+  receiveStockBatch,
+  subscribeInventory,
+  type StockStatusKey,
+} from "@/lib/firebase/inventory";
+import {
+  ORDER_STATUS_FLOW,
+  ORDER_STATUS_LABELS,
+  subscribeOrders,
+  updateOrderStatus,
+} from "@/lib/firebase/orders";
+import { SIZE_CHART } from "@/lib/data";
+import type { InventoryEntry, OrderStatus, RingProduct, SalesOrder } from "@/types";
 
 interface SizeStock {
-  size: string;
+  size: number;
   diameter: string;
   stock: number;
-  status: "Optymalny" | "Stabilny" | "NISKI STAN MAGAZYNU" | "Zamów dostawę";
-  statusType: "optimal" | "stable" | "low" | "reorder";
+  status: string;
+  statusType: StockStatusKey;
 }
 
-const INITIAL_ORDERS: OrderItem[] = [
-  {
-    id: "#AUR-9842",
-    client: "Aleksander Dąbrowski",
-    email: "aleksander@claritas.pl",
-    model: "Gen 3 Champagne Gold",
-    finish: "Champagne Gold",
-    finishDotColor: "bg-amber-400",
-    size: "Rozmiar 9#",
-    status: "Wysłano Sizing Kit",
-    statusType: "sizing-sent",
-    amount: "1 799,00 PLN",
-  },
-  {
-    id: "#AUR-9841",
-    client: "Marta Kozłowska",
-    email: "m.kozlowska@artstudios.co",
-    model: "Gen 3 Matte Obsidian",
-    finish: "Matte Obsidian",
-    finishDotColor: "bg-zinc-700",
-    size: "Wybiera rozmiar",
-    status: "Oczekiwanie na wybór rozmiaru",
-    statusType: "awaiting-size",
-    amount: "1 649,00 PLN",
-  },
-  {
-    id: "#AUR-9840",
-    client: "dr Jakub Wiśniewski",
-    email: "j.wisniewski@medica.pl",
-    model: "Gen 3 Silver Titanium",
-    finish: "Silver Titanium",
-    finishDotColor: "bg-zinc-300",
-    size: "Rozmiar 11#",
-    status: "Przygotowano do wysyłki pierścienia",
-    statusType: "preparing-ring",
-    amount: "1 649,00 PLN",
-  },
-  {
-    id: "#AUR-9839",
-    client: "Natalia Kaczmarek",
-    email: "natalia@intellect-team.pl",
-    model: "Gen 3 Matte Obsidian",
-    finish: "Matte Obsidian",
-    finishDotColor: "bg-zinc-700",
-    size: "Rozmiar 8#",
-    status: "Zrealizowane (Aktywne IoT)",
-    statusType: "active-iot",
-    amount: "1 649,00 PLN",
-  },
-];
+const ORDER_STATUS_BADGE_CLASSES: Record<OrderStatus, string> = {
+  new: "border-cyan-500/30 bg-cyan-500/15 text-cyan-300",
+  "sizing-sent": "border-amber-500/30 bg-amber-500/15 text-amber-300",
+  "awaiting-size": "border-yellow-500/30 bg-yellow-500/15 text-yellow-300",
+  "preparing-ring": "border-amber-500/30 bg-amber-500/15 text-amber-300",
+  completed: "border-emerald-500/30 bg-emerald-500/15 text-emerald-300",
+};
+
+const FINISH_DOT_COLORS: Record<RingProduct["finish"], string> = {
+  black: "bg-zinc-700",
+  gold: "bg-amber-400",
+  silver: "bg-zinc-300",
+  gunmetal: "bg-zinc-500",
+  blue: "bg-cyan-400",
+  "rose-gold": "bg-rose-400",
+};
+
+function formatAmount(value: number): string {
+  return `${value.toLocaleString("pl-PL", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} PLN`;
+}
+
+function getOrderSizeLabel(order: SalesOrder): string {
+  const firstLine = order.items[0];
+  if (!firstLine) return "Brak pozycji";
+
+  const extraItems = order.items.length - 1;
+  return extraItems > 0
+    ? `Rozmiar ${firstLine.size}# (+${extraItems})`
+    : `Rozmiar ${firstLine.size}#`;
+}
 
 export default function TechnologyConsolePage() {
   const { user } = useAuth();
@@ -124,28 +108,150 @@ export default function TechnologyConsolePage() {
   const [isOtaRunning, setIsOtaRunning] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Stock items data
-  const [stockData, setStockData] = useState<SizeStock[]>([
-    { size: "7#", diameter: "17.3 mm wewn.", stock: 142, status: "Optymalny", statusType: "optimal" },
-    { size: "8#", diameter: "18.1 mm wewn.", stock: 89, status: "Stabilny", statusType: "stable" },
-    { size: "9#", diameter: "18.9 mm wewn.", stock: 14, status: "NISKI STAN MAGAZYNU", statusType: "low" },
-    { size: "10#", diameter: "19.8 mm wewn.", stock: 28, status: "Zamów dostawę", statusType: "reorder" },
-    { size: "11#", diameter: "20.6 mm wewn.", stock: 115, status: "Optymalny", statusType: "optimal" },
-    { size: "12#", diameter: "21.4 mm wewn.", stock: 73, status: "Stabilny", statusType: "stable" },
-    { size: "13#", diameter: "22.2 mm wewn.", stock: 62, status: "Stabilny", statusType: "stable" },
-  ]);
+  // Sprzedaż i magazyn czytamy na żywo z Firestore.
+  const [orders, setOrders] = useState<SalesOrder[]>([]);
+  const [ordersState, setOrdersState] = useState<"loading" | "ready" | "error">(
+    isFirebaseConfigured ? "loading" : "error",
+  );
+  const [inventory, setInventory] = useState<InventoryEntry[]>([]);
+  const [inventoryState, setInventoryState] = useState<
+    "loading" | "ready" | "error"
+  >(isFirebaseConfigured ? "loading" : "error");
+
+  // Pierwsze wejście do konsoli tworzy brakujące kolekcje `products`,
+  // `inventory` i subskrybuje kolekcję `orders`.
+  useEffect(() => {
+    // Reguły Firestore wymagają zalogowanego administratora — czekamy na sesję.
+    if (!isFirebaseConfigured || !user) return;
+
+    let cancelled = false;
+
+    void seedSalesCatalog()
+      .then((result) => {
+        if (cancelled) return;
+        if (result.productsCreated > 0 || result.inventoryCreated > 0) {
+          setToastMessage(
+            `Zsynchronizowano katalog z Firestore: ${result.productsCreated} produktów, ${result.inventoryCreated} rozmiarów magazynowych.`,
+          );
+          setTimeout(() => setToastMessage(null), 3500);
+        }
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        console.warn(
+          "[firebase] Nie udało się utworzyć kolekcji sprzedaży.",
+          error instanceof Error ? error.message : "nieznany błąd",
+        );
+      });
+
+    const unsubscribeOrders = subscribeOrders(
+      (nextOrders) => {
+        setOrders(nextOrders);
+        setOrdersState("ready");
+      },
+      (error) => {
+        console.warn("[firebase] Nie udało się pobrać zamówień.", error.message);
+        setOrdersState("error");
+      },
+    );
+
+    const unsubscribeInventory = subscribeInventory(
+      (nextInventory) => {
+        setInventory(nextInventory);
+        setInventoryState("ready");
+      },
+      (error) => {
+        console.warn("[firebase] Nie udało się pobrać magazynu.", error.message);
+        setInventoryState("error");
+      },
+    );
+
+    return () => {
+      cancelled = true;
+      unsubscribeOrders();
+      unsubscribeInventory();
+    };
+  }, [user]);
+
+  const stockRows = useMemo<SizeStock[]>(() => {
+    const bySize = new Map(inventory.map((entry) => [entry.size, entry]));
+
+    return SIZE_CHART.map((entry) => {
+      const stock = bySize.get(entry.size)?.stock ?? 0;
+      const status = getStockStatus(stock);
+
+      return {
+        size: entry.size,
+        diameter: `${entry.diameterMm} mm wewn.`,
+        stock,
+        status: status.label,
+        statusType: status.key,
+      };
+    });
+  }, [inventory]);
 
   const filteredOrders = useMemo(() => {
-    if (!searchQuery.trim()) return INITIAL_ORDERS;
-    const q = searchQuery.toLowerCase();
-    return INITIAL_ORDERS.filter(
-      (o) =>
-        o.client.toLowerCase().includes(q) ||
-        o.id.toLowerCase().includes(q) ||
-        o.email.toLowerCase().includes(q) ||
-        o.model.toLowerCase().includes(q)
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return orders;
+
+    return orders.filter((order) => {
+      const searchable = [
+        order.number,
+        order.clientName,
+        order.email,
+        ...order.items.map((item) => item.name),
+      ];
+
+      return searchable.some((value) => value.toLowerCase().includes(query));
+    });
+  }, [orders, searchQuery]);
+
+  const metrics = useMemo(() => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const todaysOrders = orders.filter(
+      (order) => order.createdAt !== null && order.createdAt >= startOfToday,
     );
-  }, [searchQuery]);
+
+    const revenueToday = todaysOrders.reduce(
+      (sum, order) => sum + order.subtotal,
+      0,
+    );
+
+    const sizingKitCount = orders.filter((order) => order.includeSizingKit).length;
+
+    const sizeCounts = new Map<number, number>();
+    orders.forEach((order) => {
+      order.items.forEach((item) => {
+        sizeCounts.set(item.size, (sizeCounts.get(item.size) ?? 0) + item.quantity);
+      });
+    });
+
+    const totalUnits = [...sizeCounts.values()].reduce(
+      (sum, count) => sum + count,
+      0,
+    );
+
+    const topSizes = [...sizeCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([size, count]) => ({
+        size,
+        share: totalUnits > 0 ? Math.round((count / totalUnits) * 100) : 0,
+      }));
+
+    return {
+      revenueToday,
+      sizingKitCount,
+      topSizes,
+      todaysOrderCount: todaysOrders.length,
+    };
+  }, [orders]);
+
+  const stockWarnings = stockRows.filter(
+    (row) => row.statusType === "low" || row.statusType === "reorder",
+  ).length;
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -169,36 +275,46 @@ export default function TechnologyConsolePage() {
     }, 400);
   };
 
-  const handleAddStockSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddStockSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const targetSize = formData.get("size") as string;
-    const addCount = parseInt(formData.get("amount") as string, 10) || 50;
+    const targetSize = Number.parseInt(String(formData.get("size")), 10);
+    const finish = String(formData.get("finish") ?? "Matte Obsidian");
+    const addCount = Number.parseInt(String(formData.get("amount")), 10);
 
-    setStockData((prev) =>
-      prev.map((item) => {
-        if (item.size === targetSize) {
-          const nextStock = item.stock + addCount;
-          let nextStatus: SizeStock["status"] = "Optymalny";
-          let nextType: SizeStock["statusType"] = "optimal";
-          if (nextStock < 20) {
-            nextStatus = "NISKI STAN MAGAZYNU";
-            nextType = "low";
-          } else if (nextStock < 35) {
-            nextStatus = "Zamów dostawę";
-            nextType = "reorder";
-          } else if (nextStock < 90) {
-            nextStatus = "Stabilny";
-            nextType = "stable";
-          }
-          return { ...item, stock: nextStock, status: nextStatus, statusType: nextType };
-        }
-        return item;
-      })
-    );
+    if (!Number.isFinite(targetSize) || !Number.isFinite(addCount) || addCount <= 0) {
+      showToast("Podaj poprawny rozmiar i liczbę sztuk w dostawie.");
+      return;
+    }
 
-    setIsAddStockOpen(false);
-    showToast(`Pomyślnie przyjęto partię +${addCount} szt. dla rozmiaru ${targetSize}!`);
+    try {
+      await receiveStockBatch(targetSize, addCount, finish);
+      setIsAddStockOpen(false);
+      showToast(
+        `Pomyślnie przyjęto partię +${addCount} szt. dla rozmiaru ${targetSize}#!`,
+      );
+    } catch (error) {
+      console.warn(
+        "[firebase] Nie udało się przyjąć partii magazynowej.",
+        error instanceof Error ? error.message : "nieznany błąd",
+      );
+      showToast("Nie udało się zapisać dostawy w Firestore.");
+    }
+  };
+
+  const handleStatusChange = async (orderId: string, status: OrderStatus) => {
+    try {
+      await updateOrderStatus(orderId, status);
+      showToast(
+        `Zaktualizowano status zamówienia na „${ORDER_STATUS_LABELS[status]}”.`,
+      );
+    } catch (error) {
+      console.warn(
+        "[firebase] Nie udało się zaktualizować statusu zamówienia.",
+        error instanceof Error ? error.message : "nieznany błąd",
+      );
+      showToast("Nie udało się zaktualizować statusu zamówienia w Firestore.");
+    }
   };
 
   return (
@@ -292,7 +408,7 @@ export default function TechnologyConsolePage() {
                   <span>Zamówienia</span>
                 </div>
                 <span className="rounded-md bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-300">
-                  58
+                  {orders.length}
                 </span>
               </button>
 
@@ -436,7 +552,11 @@ export default function TechnologyConsolePage() {
 
                 <button
                   type="button"
-                  onClick={() => showToast("Wygenerowano raport sprzedaży XLSX (84 920 PLN).")}
+                  onClick={() =>
+                    showToast(
+                      `Wygenerowano raport sprzedaży XLSX (${formatAmount(metrics.revenueToday)}).`,
+                    )
+                  }
                   className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/90 px-3.5 py-2.5 text-xs font-medium text-zinc-200 transition hover:border-zinc-700 hover:bg-zinc-900 hover:text-white cursor-pointer"
                 >
                   <Download className="h-3.5 w-3.5 text-zinc-400" />
@@ -466,14 +586,15 @@ export default function TechnologyConsolePage() {
                     </div>
                   </div>
                   <div className="mt-3 font-serif text-3xl font-bold text-white tracking-tight">
-                    84 920 <span className="text-lg font-sans font-normal text-zinc-400">PLN</span>
+                    {metrics.revenueToday.toLocaleString("pl-PL")}{" "}
+                    <span className="text-lg font-sans font-normal text-zinc-400">PLN</span>
                   </div>
                   <div className="mt-2 flex items-center gap-2 text-[11px]">
                     <span className="inline-flex items-center gap-1 font-semibold text-emerald-400">
                       <TrendingUp className="h-3 w-3" />
-                      + 18.4%
+                      {metrics.todaysOrderCount} zamówień
                     </span>
-                    <span className="text-zinc-500">(vs. 71 700 PLN wczoraj)</span>
+                    <span className="text-zinc-500">złożonych dzisiaj</span>
                   </div>
                 </div>
 
@@ -511,18 +632,28 @@ export default function TechnologyConsolePage() {
                     </div>
                   </div>
                   <div className="mt-3 font-serif text-3xl font-bold text-white tracking-tight">
-                    58 <span className="text-sm font-sans font-normal text-zinc-400">zamówień</span>
+                    {orders.length}{" "}
+                    <span className="text-sm font-sans font-normal text-zinc-400">zamówień</span>
                   </div>
                   <div className="mt-2 text-[11px] text-zinc-400 flex items-center gap-1.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                    <span>52 z zestawem pomiarowym (Sizing Kit)</span>
+                    <span>{metrics.sizingKitCount} z zestawem pomiarowym (Sizing Kit)</span>
                   </div>
                 </div>
 
                 {/* Sizing Kit Progress Bar */}
                 <div className="mt-5 space-y-1">
                   <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-800/80 flex">
-                    <div className="h-full bg-cyan-400 rounded-full" style={{ width: "90%" }} />
+                    <div
+                      className="h-full bg-cyan-400 rounded-full"
+                      style={{
+                        width: `${
+                          orders.length > 0
+                            ? Math.round((metrics.sizingKitCount / orders.length) * 100)
+                            : 0
+                        }%`,
+                      }}
+                    />
                   </div>
                 </div>
               </div>
@@ -569,24 +700,35 @@ export default function TechnologyConsolePage() {
                     </div>
                   </div>
                   <div className="mt-3 font-serif text-3xl font-bold text-amber-200 tracking-tight">
-                    9# oraz 10#
+                    {metrics.topSizes.length > 0
+                      ? metrics.topSizes
+                          .slice(0, 2)
+                          .map((item) => `${item.size}#`)
+                          .join(" oraz ")
+                      : "Brak danych"}
                   </div>
                   <div className="mt-1 text-[11px] text-zinc-400">
-                    <strong className="text-zinc-200 font-medium">44%</strong> wolumenu sprzedaży tego tygodnia
+                    <strong className="text-zinc-200 font-medium">
+                      {metrics.topSizes[0]?.share ?? 0}%
+                    </strong>{" "}
+                    wolumenu sprzedaży
                   </div>
                 </div>
 
                 {/* Breakdown Pills */}
                 <div className="mt-4 flex flex-wrap gap-1.5 text-[10px]">
-                  <span className="rounded-lg border border-zinc-800 bg-zinc-900/90 px-2 py-0.5 text-zinc-300 font-mono">
-                    9# (23%)
-                  </span>
-                  <span className="rounded-lg border border-zinc-800 bg-zinc-900/90 px-2 py-0.5 text-zinc-300 font-mono">
-                    10# (21%)
-                  </span>
-                  <span className="rounded-lg border border-zinc-800 bg-zinc-900/90 px-2 py-0.5 text-zinc-300 font-mono">
-                    8# (16%)
-                  </span>
+                  {metrics.topSizes.length > 0 ? (
+                    metrics.topSizes.map((item) => (
+                      <span
+                        key={item.size}
+                        className="rounded-lg border border-zinc-800 bg-zinc-900/90 px-2 py-0.5 text-zinc-300 font-mono"
+                      >
+                        {item.size}# ({item.share}%)
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-zinc-500">Brak sprzedaży w bazie.</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -877,7 +1019,7 @@ export default function TechnologyConsolePage() {
                     LOGISTYKA MAGAZYNOWA
                   </span>
                   <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-400/30">
-                    2 Ostrzeżenia
+                    {stockWarnings} ostrz.
                   </span>
                 </div>
 
@@ -900,10 +1042,21 @@ export default function TechnologyConsolePage() {
               <h2 className="font-serif text-lg font-medium text-white">
                 Matryca Rozmiarów &amp; Stany Magazynowe
               </h2>
+              {inventoryState !== "ready" && (
+                <p
+                  className={`text-[11px] ${
+                    inventoryState === "error" ? "text-red-400" : "text-zinc-500"
+                  }`}
+                >
+                  {inventoryState === "error"
+                    ? "Nie udało się pobrać stanów magazynowych z Firestore."
+                    : "Wczytywanie stanów magazynowych z Firestore…"}
+                </p>
+              )}
 
               {/* 7 Size Cards Row */}
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-                {stockData.map((item) => (
+                {stockRows.map((item) => (
                   <div
                     key={item.size}
                     className={`rounded-xl p-3.5 border transition-all ${
@@ -916,7 +1069,7 @@ export default function TechnologyConsolePage() {
                   >
                       <div className="flex items-center justify-between">
                         <span className="font-serif text-base font-bold text-white">
-                          {item.size}
+                          {item.size}#
                         </span>
                         <span
                           className={`h-2 w-2 rounded-full ${
@@ -1004,114 +1157,159 @@ export default function TechnologyConsolePage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800/60 bg-[#0c0d12]">
-                    {filteredOrders.map((order) => (
-                      <tr
-                        key={order.id}
-                        className="transition-colors hover:bg-zinc-900/40 relative"
-                      >
-                        <td className="px-4 py-3.5 font-mono font-semibold text-amber-300">
-                          {order.id}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <div className="font-medium text-white">{order.client}</div>
-                          <div className="text-[11px] text-zinc-500 font-mono">{order.email}</div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-1.5 text-zinc-200">
-                            <span className={`h-2 w-2 rounded-full ${order.finishDotColor}`} />
-                            <span>{order.model}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span className="rounded bg-zinc-800/80 px-2 py-0.5 text-[11px] text-zinc-300 font-mono">
-                            {order.size}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          {order.statusType === "sizing-sent" && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/15 px-2.5 py-1 text-[11px] font-medium text-amber-300">
-                              <Package className="h-3 w-3" />
-                              <span>{order.status}</span>
-                            </span>
-                          )}
-                          {order.statusType === "awaiting-size" && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-yellow-500/30 bg-yellow-500/15 px-2.5 py-1 text-[11px] font-medium text-yellow-300">
-                              <Clock className="h-3 w-3" />
-                              <span>{order.status}</span>
-                            </span>
-                          )}
-                          {order.statusType === "preparing-ring" && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/15 px-2.5 py-1 text-[11px] font-medium text-cyan-300">
-                              <Boxes className="h-3 w-3" />
-                              <span>{order.status}</span>
-                            </span>
-                          )}
-                          {order.statusType === "active-iot" && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
-                              <CheckCircle2 className="h-3 w-3" />
-                              <span>{order.status}</span>
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3.5 font-mono font-bold text-white">
-                          {order.amount}
-                        </td>
-                        <td className="px-4 py-3.5 text-right relative">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setActiveOrderMenu(activeOrderMenu === order.id ? null : order.id)
-                            }
-                            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-white transition cursor-pointer"
-                            aria-label={`Akcje dla zamówienia ${order.id}`}
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </button>
-
-                          {activeOrderMenu === order.id && (
-                            <div className="absolute right-4 top-10 z-20 w-44 rounded-xl border border-zinc-800 bg-zinc-950 p-1.5 shadow-2xl text-left text-xs animate-in fade-in zoom-in-95">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  showToast(`Podgląd telemetrii dla ${order.client}`);
-                                  setActiveOrderMenu(null);
-                                }}
-                                className="w-full text-left px-2.5 py-1.5 rounded-lg text-zinc-300 hover:bg-zinc-800 hover:text-white"
-                              >
-                                Telemetria pierścienia
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  showToast(`Wysłano powiadomienie do ${order.email}`);
-                                  setActiveOrderMenu(null);
-                                }}
-                                className="w-full text-left px-2.5 py-1.5 rounded-lg text-zinc-300 hover:bg-zinc-800 hover:text-white"
-                              >
-                                Wyślij SMS / E-mail
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  showToast(`Szczegóły wysyłki ${order.id}`);
-                                  setActiveOrderMenu(null);
-                                }}
-                                className="w-full text-left px-2.5 py-1.5 rounded-lg text-amber-300 hover:bg-zinc-800"
-                              >
-                                Etykieta kurierska DPD
-                              </button>
-                            </div>
-                          )}
+                    {ordersState !== "ready" && (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className={`px-4 py-6 text-center text-xs ${
+                            ordersState === "error" ? "text-red-400" : "text-zinc-500"
+                          }`}
+                        >
+                          {ordersState === "error"
+                            ? "Nie udało się pobrać zamówień. Sprawdź konfigurację Firebase i uprawnienia konta administratora."
+                            : "Wczytywanie zamówień z Firestore…"}
                         </td>
                       </tr>
-                    ))}
+                    )}
+
+                    {ordersState === "ready" && filteredOrders.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-6 text-center text-xs text-zinc-500">
+                          Brak zamówień spełniających kryteria. Nowe zamówienia z koszyka pojawią się
+                          tutaj automatycznie.
+                        </td>
+                      </tr>
+                    )}
+
+                    {filteredOrders.map((order) => {
+                      const firstItem = order.items[0];
+
+                      return (
+                        <tr
+                          key={order.id}
+                          className="transition-colors hover:bg-zinc-900/40 relative"
+                        >
+                          <td className="px-4 py-3.5 font-mono font-semibold text-amber-300">
+                            #{order.number}
+                            <div className="mt-0.5 text-[10px] font-sans font-normal text-zinc-500">
+                              {order.createdAt?.toLocaleDateString("pl-PL") ?? "—"}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <div className="font-medium text-white">{order.clientName}</div>
+                            <div className="text-[11px] text-zinc-500 font-mono">{order.email}</div>
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center gap-1.5 text-zinc-200">
+                              <span
+                                className={`h-2 w-2 rounded-full ${
+                                  firstItem
+                                    ? FINISH_DOT_COLORS[firstItem.finish]
+                                    : "bg-zinc-600"
+                                }`}
+                              />
+                              <span>{firstItem?.name ?? "Brak pozycji"}</span>
+                            </div>
+                            {firstItem && (
+                              <div className="mt-0.5 text-[11px] text-zinc-500">
+                                {firstItem.finishName}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <span className="rounded bg-zinc-800/80 px-2 py-0.5 text-[11px] text-zinc-300 font-mono">
+                              {getOrderSizeLabel(order)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <span
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${ORDER_STATUS_BADGE_CLASSES[order.status]}`}
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                              <span>{ORDER_STATUS_LABELS[order.status]}</span>
+                            </span>
+                            <select
+                              value={order.status}
+                              onChange={(event) =>
+                                void handleStatusChange(
+                                  order.id,
+                                  event.target.value as OrderStatus,
+                                )
+                              }
+                              className="mt-1.5 block w-full max-w-60 rounded-lg border border-zinc-800 bg-zinc-950 px-2 py-1 text-[11px] text-zinc-300 focus:border-amber-400 focus:outline-none cursor-pointer"
+                              aria-label={`Zmień status zamówienia ${order.number}`}
+                            >
+                              {ORDER_STATUS_FLOW.map((status) => (
+                                <option key={status} value={status}>
+                                  {ORDER_STATUS_LABELS[status]}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-4 py-3.5 font-mono font-bold text-white">
+                            {formatAmount(order.subtotal)}
+                          </td>
+                          <td className="px-4 py-3.5 text-right relative">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setActiveOrderMenu(
+                                  activeOrderMenu === order.id ? null : order.id,
+                                )
+                              }
+                              className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-white transition cursor-pointer"
+                              aria-label={`Akcje dla zamówienia ${order.number}`}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </button>
+
+                            {activeOrderMenu === order.id && (
+                              <div className="absolute right-4 top-10 z-20 w-44 rounded-xl border border-zinc-800 bg-zinc-950 p-1.5 shadow-2xl text-left text-xs animate-in fade-in zoom-in-95">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    showToast(`Podgląd telemetrii dla ${order.clientName}`);
+                                    setActiveOrderMenu(null);
+                                  }}
+                                  className="w-full text-left px-2.5 py-1.5 rounded-lg text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                                >
+                                  Telemetria pierścienia
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    showToast(`Wysłano powiadomienie do ${order.email}`);
+                                    setActiveOrderMenu(null);
+                                  }}
+                                  className="w-full text-left px-2.5 py-1.5 rounded-lg text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                                >
+                                  Wyślij SMS / E-mail
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    showToast(`Szczegóły wysyłki #${order.number}`);
+                                    setActiveOrderMenu(null);
+                                  }}
+                                  className="w-full text-left px-2.5 py-1.5 rounded-lg text-amber-300 hover:bg-zinc-800"
+                                >
+                                  Etykieta kurierska DPD
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
 
               {/* Table Pagination Footer */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 text-xs text-zinc-500">
-                <div>Wyświetlono 4 z 58 nowych zamówień dzisiaj</div>
+                <div>
+                  Wyświetlono {filteredOrders.length} z {orders.length} zamówień
+                </div>
                 <div className="flex items-center gap-1.5 self-center">
                   <button
                     type="button"
@@ -1281,9 +1479,9 @@ export default function TechnologyConsolePage() {
                   defaultValue="9#"
                   className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-xs text-white focus:border-amber-400 focus:outline-none"
                 >
-                  {stockData.map((s) => (
+                  {stockRows.map((s) => (
                     <option key={s.size} value={s.size}>
-                      Rozmiar {s.size} ({s.diameter}) — Aktualny stan: {s.stock} szt.
+                      Rozmiar {s.size}# ({s.diameter}) — Aktualny stan: {s.stock} szt.
                     </option>
                   ))}
                 </select>

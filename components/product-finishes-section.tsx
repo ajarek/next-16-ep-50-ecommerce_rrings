@@ -3,12 +3,13 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { ShoppingBag, Truck, Check, Sparkles, Filter } from "lucide-react";
-import { PRODUCTS } from "@/lib/data";
 import { RingProduct } from "@/types";
 import { useCart } from "@/context/cart-context";
+import { useCatalogProducts } from "@/hooks/use-catalog-products";
 
 export function ProductFinishesSection() {
   const { addToCart, openSizeGuide } = useCart();
+  const products = useCatalogProducts();
 
   // Filter category state
   const [activeFilter, setActiveFilter] = useState<
@@ -41,7 +42,7 @@ export function ProductFinishesSection() {
   };
 
   // Filter products based on selected tab
-  const filteredProducts = PRODUCTS.filter((product) => {
+  const filteredProducts = products.filter((product) => {
     if (activeFilter === "all") return true;
     if (activeFilter === "black") {
       return product.finish === "black" || product.finish === "gunmetal";
@@ -64,26 +65,26 @@ export function ProductFinishesSection() {
   });
 
   const filterTabs = [
-    { id: "all", label: "Wszystkie modele", count: PRODUCTS.length },
+    { id: "all", label: "Wszystkie modele", count: products.length },
     {
       id: "black",
       label: "Czerń & Grafit",
-      count: PRODUCTS.filter((p) => p.finish === "black" || p.finish === "gunmetal").length,
+      count: products.filter((p) => p.finish === "black" || p.finish === "gunmetal").length,
     },
     {
       id: "gold",
       label: "Złoto & Luksus",
-      count: PRODUCTS.filter((p) => p.finish === "gold" || p.finish === "rose-gold").length,
+      count: products.filter((p) => p.finish === "gold" || p.finish === "rose-gold").length,
     },
     {
       id: "silver",
       label: "Srebro & Tytan",
-      count: PRODUCTS.filter((p) => p.finish === "silver").length,
+      count: products.filter((p) => p.finish === "silver").length,
     },
     {
       id: "special",
       label: "Edycje Limitowane",
-      count: PRODUCTS.filter(
+      count: products.filter(
         (p) =>
           p.finish === "blue" ||
           p.badge === "Edycja Limitowana" ||
@@ -156,7 +157,7 @@ export function ProductFinishesSection() {
               <strong className="text-zinc-200">
                 {filteredProducts.length}
               </strong>{" "}
-              z {PRODUCTS.length} modeli
+              z {products.length} modeli
             </span>
           </div>
         </div>

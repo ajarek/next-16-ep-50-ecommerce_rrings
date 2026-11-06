@@ -4,16 +4,17 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ShoppingBag, Truck, Check, ArrowRight, Sparkles } from "lucide-react";
-import { PRODUCTS } from "@/lib/data";
 import { RingProduct } from "@/types";
 import { useCart } from "@/context/cart-context";
+import { useCatalogProducts } from "@/hooks/use-catalog-products";
 
 export function FeaturedProductsSection() {
   const { addToCart, openSizeGuide } = useCart();
+  const products = useCatalogProducts();
 
   // Only the first three products for the home page
-  const featuredProducts = PRODUCTS.slice(0, 3);
-  const remainingProducts = PRODUCTS.slice(3);
+  const featuredProducts = products.slice(0, 3);
+  const remainingProducts = products.slice(3);
 
   // Selected sizes for each product (defaults: 10, 8, 11)
   const [selectedSizes, setSelectedSizes] = useState<Record<string, number>>({

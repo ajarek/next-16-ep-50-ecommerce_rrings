@@ -15,6 +15,9 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useCart } from "@/context/cart-context";
+import { useAuth } from "@/context/auth-context";
+import { isFirebaseConfigured } from "@/lib/firebase/client";
+import { createOrder } from "@/lib/firebase/orders";
 
 export function CartDrawer() {
   const {
@@ -25,11 +28,15 @@ export function CartDrawer() {
     setIsCartOpen,
     removeFromCart,
     updateQuantity,
+    clearCart,
   } = useCart();
+  const { user } = useAuth();
 
   const [includeSizingKit, setIncludeSizingKit] = useState(true);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutComplete, setCheckoutComplete] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
 
   // Close on Escape key
   useEffect(() => {
@@ -48,12 +55,46 @@ export function CartDrawer() {
 
   if (!isCartOpen) return null;
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
+    if (!isFirebaseConfigured) {
+      setCheckoutError(
+        "Sklep nie ma skonfigurowanego połączenia z bazą zamówień. Spróbuj ponownie później.",
+      );
+      return;
+    }
+
+    if (!user) {
+      setCheckoutError(
+        "Aby złożyć zamówienie, zaloguj się na swoje konto AURA.",
+      );
+      return;
+    }
+
     setIsCheckingOut(true);
-    setTimeout(() => {
-      setIsCheckingOut(false);
+    setCheckoutError(null);
+
+    try {
+      const number = await createOrder({
+        user,
+        items,
+        subtotal,
+        includeSizingKit,
+      });
+
+      setOrderNumber(number);
       setCheckoutComplete(true);
-    }, 1200);
+      clearCart();
+    } catch (error) {
+      console.warn(
+        "[firebase] Nie udało się zapisać zamówienia.",
+        error instanceof Error ? error.message : "nieznany błąd",
+      );
+      setCheckoutError(
+        "Nie udało się złożyć zamówienia. Sprawdź połączenie i spróbuj ponownie.",
+      );
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   return (
@@ -104,10 +145,14 @@ export function CartDrawer() {
               </div>
               <h4 className="font-serif text-2xl font-medium text-white">
                 Dziękujemy za zamówienie!
-              </h4>
-              <p className="mt-2 text-xs text-zinc-400 max-w-xs leading-relaxed">
+              </h4>                <p className="mt-2 text-xs text-zinc-400 max-w-xs leading-relaxed">
                 Potwierdzenie wraz z numerem śledzenia zostało wysłane. Twój Zestaw Miarowy wyruszy w drogę już jutro rano!
               </p>
+              {orderNumber && (
+                <p className="mt-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 font-mono text-xs text-emerald-200">
+                  Numer zamówienia: #{orderNumber}
+                </p>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -263,6 +308,24 @@ export function CartDrawer() {
                   <span>Przejdź do kasy</span>
                 )}
               </button>
+
+              {checkoutError && (
+                <div
+                  role="alert"
+                  className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-[11px] leading-relaxed text-red-200"
+                >
+                  <p>{checkoutError}</p>
+                  {!user && (
+                    <Link
+                      href="/logowanie?redirect=/products"
+                      onClick={() => setIsCartOpen(false)}
+                      className="mt-1.5 inline-block font-semibold text-amber-300 underline"
+                    >
+                      Przejdź do logowania
+                    </Link>
+                  )}
+                </div>
+              )}
 
               <div className="text-center">
                 <Link
