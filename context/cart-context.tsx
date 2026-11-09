@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useState } from "react"
+import React, { createContext, useContext, useState, useCallback } from "react"
 import { CartItem, RingProduct } from "@/types"
 import { PRODUCTS } from "@/lib/data"
 
@@ -37,46 +37,46 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     0,
   )
 
-  const addToCart = (product: RingProduct, size: number) => {
-    const existingIndex = items.findIndex(
-      (item) => item.productId === product.id && item.size === size,
-    )
+  const addToCart = useCallback((product: RingProduct, size: number) => {
+    setItems((prev) => {
+      const existingIndex = prev.findIndex(
+        (item) => item.productId === product.id && item.size === size,
+      )
 
-    if (existingIndex > -1) {
-      setItems((prev) =>
-        prev.map((item, idx) =>
+      if (existingIndex > -1) {
+        return prev.map((item, idx) =>
           idx === existingIndex
             ? { ...item, quantity: item.quantity + 1 }
             : item,
-        ),
-      )
-    } else {
-      const newItem: CartItem = {
-        id: `cart-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        productId: product.id,
-        name: product.name,
-        finishName: product.finishName,
-        finish: product.finish,
-        size: size,
-        price: product.price,
-        quantity: 1,
-        image: product.image,
+        )
+      } else {
+        const newItem: CartItem = {
+          id: `cart-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          productId: product.id,
+          name: product.name,
+          finishName: product.finishName,
+          finish: product.finish,
+          size: size,
+          price: product.price,
+          quantity: 1,
+          image: product.image,
+        }
+        return [newItem, ...prev]
       }
-      setItems((prev) => [newItem, ...prev])
-    }
+    })
 
     setIsCartOpen(true)
-  }
+  }, [])
 
-  const removeFromCart = (cartItemId: string) => {
+  const removeFromCart = useCallback((cartItemId: string) => {
     setItems((prev) => prev.filter((item) => item.id !== cartItemId))
-  }
+  }, [])
 
-  const clearCart = () => {
-    setItems([])
-  }
+  const clearCart = useCallback(() => {
+    setItems((prev) => (prev.length === 0 ? prev : []))
+  }, [])
 
-  const updateQuantity = (cartItemId: string, delta: number) => {
+  const updateQuantity = useCallback((cartItemId: string, delta: number) => {
     setItems(
       (prev) =>
         prev
@@ -89,12 +89,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           })
           .filter(Boolean) as CartItem[],
     )
-  }
+  }, [])
 
-  const openSizeGuide = (product?: RingProduct) => {
+  const openSizeGuide = useCallback((product?: RingProduct) => {
     setSelectedProductForSizing(product || PRODUCTS[0])
     setIsSizeGuideOpen(true)
-  }
+  }, [])
 
   return (
     <CartContext.Provider

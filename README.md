@@ -33,11 +33,46 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
 ADMIN_EMAIL=
+
+# Płatności Stripe (Test Mode)
+STRIPE_SECRET_KEY=rk_test_... # lub sk_test_... (klucz serwerowy)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_... # opcjonalnie do weryfikacji webhooków
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 `ADMIN_EMAIL` wskazuje jedyne konto z dostępem do `/admin`. Domyślnie
 używane jest konto `ajarek2101@gmail.com`. Wartość jest sprawdzana
 wyłącznie po stronie serwera.
+
+## Płatności Stripe Checkout (Tryb Testowy)
+
+Sklep posiada pełną integrację ze **Stripe Checkout** obsługującą płatności kartą, BLIK oraz Apple Pay w trybie testowym:
+
+- **Panel testowy kasy:** [`/checkout`](http://localhost:3000/checkout) — strona umożliwiająca natychmiastowe przetestowanie zakupu dowolnego wariantu pierścienia Aura Ring Gen 3 bez konieczności przechodzenia przez koszyk.
+- **Koszyk sklepowy:** Przycisk *„Przejdź do kasy”* w wysuwanym koszyku (`components/cart-drawer.tsx`) generuje sesję płatności Stripe i bezpiecznie przekierowuje klienta.
+- **Endpointy backendu:**
+  - `POST /api/checkout` (oraz alias `POST /api/create-checkout-session`) — tworzy sesję Stripe Checkout na podstawie zawartości koszyka.
+  - `GET /api/checkout/session?session_id=...` — pobiera szczegóły potwierdzonej sesji dla strony sukcesu.
+  - `POST /api/webhooks/stripe` — nasłuchuje zdarzeń Stripe (np. `checkout.session.completed`).
+- **Strony powrotu:**
+  - Sukces: `/checkout/success` (alias `/success`) — eleganckie potwierdzenie z podsumowaniem i statusem zamówienia.
+  - Anulowanie: `/checkout/cancel` (alias `/cancel`) — bezpieczny powrót do koszyka.
+
+### Testowanie Webhooków lokalnie przez Stripe CLI
+
+Aby lokalnie przekazywać zdarzenia ze Stripe do endpointa webhooka:
+
+```bash
+# 1. Logowanie w Stripe CLI
+stripe login
+
+# 2. Przekierowanie webhooków do lokalnego serwera
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+
+# 3. Skopiuj wyświetlony sekret webhooka (whsec_...) do pliku .env jako:
+# STRIPE_WEBHOOK_SECRET=whsec_...
+```
 
 ## Kolekcje Firestore i system sprzedaży
 

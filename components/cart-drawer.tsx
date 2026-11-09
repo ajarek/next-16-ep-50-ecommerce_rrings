@@ -11,13 +11,10 @@ import {
   Trash2,
   Truck,
   ShieldCheck,
-  CheckCircle,
   ArrowLeft,
 } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 import { useAuth } from "@/context/auth-context";
-import { isFirebaseConfigured } from "@/lib/firebase/client";
-import { createOrder } from "@/lib/firebase/orders";
 
 export function CartDrawer() {
   const {
@@ -28,15 +25,12 @@ export function CartDrawer() {
     setIsCartOpen,
     removeFromCart,
     updateQuantity,
-    clearCart,
   } = useCart();
   const { user } = useAuth();
 
   const [includeSizingKit, setIncludeSizingKit] = useState(true);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [checkoutComplete, setCheckoutComplete] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const [orderNumber, setOrderNumber] = useState<string | null>(null);
 
   // Close on Escape key
   useEffect(() => {
@@ -56,43 +50,50 @@ export function CartDrawer() {
   if (!isCartOpen) return null;
 
   const handleCheckout = async () => {
-    if (!isFirebaseConfigured) {
-      setCheckoutError(
-        "Sklep nie ma skonfigurowanego połączenia z bazą zamówień. Spróbuj ponownie później.",
-      );
-      return;
-    }
-
-    if (!user) {
-      setCheckoutError(
-        "Aby złożyć zamówienie, zaloguj się na swoje konto AURA.",
-      );
-      return;
-    }
+    if (items.length === 0) return;
 
     setIsCheckingOut(true);
     setCheckoutError(null);
 
     try {
-      const number = await createOrder({
-        user,
-        items,
-        subtotal,
-        includeSizingKit,
+      // Inicjalizacja sesji Stripe Checkout
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((it) => ({
+            productId: it.productId,
+            name: it.name,
+            finishName: it.finishName,
+            size: it.size,
+            price: it.price,
+            quantity: it.quantity,
+            image: it.image,
+          })),
+          includeSizingKit,
+          userEmail: user?.email || undefined,
+          userId: user?.uid || undefined,
+        }),
       });
 
-      setOrderNumber(number);
-      setCheckoutComplete(true);
-      clearCart();
+      const data = await response.json();
+
+      if (!response.ok || !data.url) {
+        throw new Error(data.error || "Nie udało się utworzyć sesji płatności.");
+      }
+
+      // Przekierowanie do oficjalnego formularza Stripe Checkout
+      window.location.href = data.url;
     } catch (error) {
       console.warn(
-        "[firebase] Nie udało się zapisać zamówienia.",
+        "[Stripe Checkout] Błąd przejścia do kasy:",
         error instanceof Error ? error.message : "nieznany błąd",
       );
       setCheckoutError(
-        "Nie udało się złożyć zamówienia. Sprawdź połączenie i spróbuj ponownie.",
+        error instanceof Error
+          ? error.message
+          : "Nie udało się połączyć z bramką płatności Stripe. Spróbuj ponownie.",
       );
-    } finally {
       setIsCheckingOut(false);
     }
   };
@@ -138,33 +139,7 @@ export function CartDrawer() {
 
         {/* Items List */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-          {checkoutComplete ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mb-4 border border-emerald-500/30">
-                <CheckCircle className="h-8 w-8" />
-              </div>
-              <h4 className="font-serif text-2xl font-medium text-white">
-                Dziękujemy za zamówienie!
-              </h4>                <p className="mt-2 text-xs text-zinc-400 max-w-xs leading-relaxed">
-                Potwierdzenie wraz z numerem śledzenia zostało wysłane. Twój Zestaw Miarowy wyruszy w drogę już jutro rano!
-              </p>
-              {orderNumber && (
-                <p className="mt-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 font-mono text-xs text-emerald-200">
-                  Numer zamówienia: #{orderNumber}
-                </p>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  setCheckoutComplete(false);
-                  setIsCartOpen(false);
-                }}
-                className="mt-6 rounded-xl border border-amber-400 bg-amber-400 px-6 py-2.5 text-xs font-bold text-zinc-950 hover:bg-amber-300 transition"
-              >
-                Kontynuuj zakupy
-              </button>
-            </div>
-          ) : items.length === 0 ? (
+          {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
               <ShoppingBag className="h-12 w-12 stroke-[1.5] mb-3 text-zinc-600" />
               <p className="text-sm">Twój koszyk jest obecnie pusty.</p>
@@ -254,7 +229,7 @@ export function CartDrawer() {
         </div>
 
         {/* Footer & Checkout Area */}
-        {!checkoutComplete && items.length > 0 && (
+        {items.length > 0 && (
           <div className="border-t border-zinc-800 bg-[#0a0a0f] p-6 space-y-4">
             {/* Free Sizing Kit Option */}
             <label className="flex items-center gap-3 cursor-pointer rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-xs text-zinc-300 transition hover:bg-zinc-900/80">
@@ -327,7 +302,7 @@ export function CartDrawer() {
                 </div>
               )}
 
-              <div className="text-center">
+              <div className="flex flex-col items-center gap-1.5 text-center">
                 <Link
                   href="/products"
                   onClick={() => setIsCartOpen(false)}
@@ -335,6 +310,13 @@ export function CartDrawer() {
                 >
                   <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
                   <span>Kontynuuj zakupy</span>
+                </Link>
+                <Link
+                  href="/checkout"
+                  onClick={() => setIsCartOpen(false)}
+                  className="text-[11px] text-amber-400/80 hover:text-amber-300 transition hover:underline"
+                >
+                  Panel testowy Stripe Sandbox ➔
                 </Link>
               </div>
             </div>
