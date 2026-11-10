@@ -17,11 +17,11 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/pricing"],
+      allow: ["/", "/products", "/technology", "/about-us", "/location"],
       disallow: [
-        "/dashboard",
         "/admin",
         "/api/",
+        "/checkout",
         "/logowanie",
         "/rejestracja",
       ],

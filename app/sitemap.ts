@@ -15,18 +15,38 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const currentDate = new Date();
 
+  // Wyłącznie trasy, które istnieją w App Router — sitemap nie może
+  // wskazywać adresów zwracających 404.
   return [
     {
-      url: `${baseUrl}`,
+      url: baseUrl,
       lastModified: currentDate,
       changeFrequency: "weekly",
       priority: 1.0,
     },
     {
-      url: `${baseUrl}/pricing`,
+      url: `${baseUrl}/products`,
+      lastModified: currentDate,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/technology`,
       lastModified: currentDate,
       changeFrequency: "monthly",
       priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/about-us`,
+      lastModified: currentDate,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/location`,
+      lastModified: currentDate,
+      changeFrequency: "monthly",
+      priority: 0.5,
     },
   ];
 }

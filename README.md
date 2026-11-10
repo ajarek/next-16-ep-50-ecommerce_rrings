@@ -115,6 +115,48 @@ stany magazynowe. Przyjęcie partii w konsoli zwiększa stan atomowo
 - Wylogowanie czyści sesję Firebase i cookie serwerowe.
 - Strony `/admin`, `/logowanie` i `/rejestracja` nie są indeksowane.
 
+## Wdrożenie na Vercel
+
+1. Zaimportuj repozytorium w Vercel i pozostaw wykryty preset
+   **Next.js** (bez własnego `vercel.json` i bez zmiany katalogu głównego).
+2. W **Settings → Environment Variables** dodaj zmienne dla środowiska
+   **Production** (i ewentualnie **Preview**):
+
+   ```bash
+   NEXT_PUBLIC_FIREBASE_API_KEY=
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+   NEXT_PUBLIC_FIREBASE_APP_ID=
+   ADMIN_EMAIL=
+   STRIPE_SECRET_KEY=sk_test_... lub rk_test_...
+   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+   STRIPE_WEBHOOK_SECRET=whsec_...
+   NEXT_PUBLIC_APP_URL=https://twoja-domena.vercel.app
+   ```
+
+   Zmienne `NEXT_PUBLIC_*` są wbudowywane w bundle podczas builda, więc
+   muszą być ustawione przed pierwszym wdrożeniem. `NEXT_PUBLIC_APP_URL`
+   ustaw na produkcyjną domenę — jest używany w `sitemap.xml`,
+   `robots.txt` oraz jako adres powrotu Stripe, gdy żądanie nie zawiera
+   nagłówka `Origin`. Bez tej zmiennej aplikacja użyje adresu z
+   `VERCEL_URL`, a `robots.txt`/`sitemap.xml` wskażą domenę wdrożenia.
+3. W **Stripe → Developers → Webhooks** dodaj endpoint
+   `https://twoja-domena.vercel.app/api/webhooks/stripe` i zasubskrybuj
+   `checkout.session.completed`, `payment_intent.succeeded` oraz
+   `payment_intent.payment_failed`. Skopiuj sekret `whsec_...` do
+   `STRIPE_WEBHOOK_SECRET` i ponownie wdroż projekt. W produkcji webhook
+   odrzuca żądania bez poprawnego podpisu.
+4. W **Firebase → Authentication → Settings → Authorized domains** dodaj
+   domenę produkcyjną (adresy podglądu Vercel trzeba dodawać pojedynczo —
+   Firebase nie obsługuje wildcardów; alternatywą jest własna domena).
+5. Wdróż reguły Firestore z pliku [`firestore.rules`](./firestore.rules)
+   poleceniem `firebase deploy --only firestore:rules` lub w konsoli
+   Firebase. Wdrożenie na Vercel nie publikuje reguł automatycznie.
+6. Po wdrożeniu sprawdź `/`, `/products`, `/checkout`, logowanie oraz
+   płatność testową kartą `4242 4242 4242 4242`.
+
 ## Przydatne skrypty
 
 ```bash

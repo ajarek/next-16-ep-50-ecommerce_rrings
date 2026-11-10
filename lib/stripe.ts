@@ -6,15 +6,14 @@ import Stripe from "stripe";
  * mogą być używane wyłącznie po stronie serwera (Route Handlers, Server Actions).
  */
 
-const stripeApiKey =
-  process.env.STRIPE_SECRET_KEY || process.env.NEXT_PUBLIC_STRIPE_KEY;
+const stripeApiKey = process.env.STRIPE_SECRET_KEY?.trim();
 
 let cachedStripe: Stripe | null = null;
 
 export function getStripe(): Stripe {
   if (!stripeApiKey) {
     throw new Error(
-      "Brak klucza Stripe API. Ustaw zmienną STRIPE_SECRET_KEY (lub NEXT_PUBLIC_STRIPE_KEY) w pliku .env.",
+      "Brak klucza Stripe API. Ustaw zmienną STRIPE_SECRET_KEY (klucz serwerowy sk_test_... / rk_test_...).",
     );
   }
 

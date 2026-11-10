@@ -7,24 +7,41 @@ export async function POST(request: Request) {
   const signature = request.headers.get("stripe-signature");
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  const stripe = getStripe();
+  // W produkcji podpis jest obowiązkowy — bez niego każdy mógłby wysłać
+  // fałszywe zdarzenie „opłacone zamówienie".
+  if (!webhookSecret) {
+    if (process.env.NODE_ENV === "production") {
+      console.error(
+        "[Stripe Webhook] Brak STRIPE_WEBHOOK_SECRET — odrzucono żądanie w środowisku produkcyjnym.",
+      );
+      return NextResponse.json(
+        { error: "Webhook nie jest skonfigurowany." },
+        { status: 500 },
+      );
+    }
+  }
+
   let event: Stripe.Event;
 
   try {
+    const stripe = getStripe();
+
     if (webhookSecret && signature) {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    } else {
-      // W środowisku deweloperskim bez skonfigurowanego STRIPE_WEBHOOK_SECRET
+    } else if (!webhookSecret) {
+      // Wyłącznie lokalnie, bez skonfigurowanego STRIPE_WEBHOOK_SECRET.
       event = JSON.parse(body) as Stripe.Event;
       console.warn(
         "[Stripe Webhook] Ostrzeżenie: Otrzymano zdarzenie bez weryfikacji podpisu (brak STRIPE_WEBHOOK_SECRET).",
       );
+    } else {
+      throw new Error("Brak nagłówka stripe-signature w żądaniu.");
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Błąd weryfikacji";
     console.error(`[Stripe Webhook Error] ${message}`);
     return NextResponse.json(
-      { error: `Błąd weryfikacji webhooka: ${message}` },
+      { error: "Błąd weryfikacji webhooka." },
       { status: 400 },
     );
   }
